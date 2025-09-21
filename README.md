@@ -1,16 +1,10 @@
 # cc98_ocean
 
-A new Flutter project.
+使用Flutter构建的全平台论坛客户端，包含对Android/IOS/Mac/Windows/Linux/Web的支持。
 
-## Getting Started
+## 起点
 
-This project is a starting point for a Flutter application.
+该项目是CC98跨平台计划的一部分。
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 参与开发
+任何人都可以自主编译新的分支，或者直接参与项目本身。

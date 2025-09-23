@@ -1,5 +1,6 @@
 
 import 'package:cc98_ocean/controls/extended_tags.dart';
+import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/helper.dart';
@@ -181,7 +182,6 @@ class _TopicState extends State<Topic> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(0),
-        side: BorderSide(color: Colors.grey.shade200, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -400,45 +400,21 @@ class _TopicState extends State<Topic> {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        title: Text('回复:$receiverName'),
+      builder: (context) => FluentDialog(
+        title: '回复:$receiverName',
         content: TextField(
           controller: controller,
           maxLines: 5,
+          
           decoration: const InputDecoration(
             hintText: '输入您的回复内容...',
             border: OutlineInputBorder(),
           ),
           onChanged: (value) {},
         ),
-        actions: [
-          TextButton(
-             style: TextButton.styleFrom(
-       shape: RoundedRectangleBorder(
-         borderRadius: BorderRadius.circular(4),
-       ),
-       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-       minimumSize: const Size(0, 0),
-     ),
-
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-             style: TextButton.styleFrom(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-         borderRadius: BorderRadius.circular(4),
-       ),
-       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-       minimumSize: const Size(0, 0),
-     ),
-            onPressed: ()async {
+        cancelText: "取消",
+        confirmText: "发送",
+        onConfirm: ()async {
               String originalContent=controller.text.trim();
               String content="$originalContent\n[align=right][size=3][color=gray]——来自「[b][color=purple]CC98 For Android[/color][/b]」[/color][/size][/align]";
               if(content.isEmpty)
@@ -469,11 +445,8 @@ class _TopicState extends State<Topic> {
               }
               }
               Navigator.pop(context);
-            },
-            child: const Text('提交'),
+            }, 
           ),
-        ],
-      ),
     );
   }
 
@@ -527,6 +500,7 @@ class _TopicState extends State<Topic> {
       ),
       body: SafeArea(child: _buildContent()),
       floatingActionButton: FloatingActionButton(
+        elevation: 3,
         mini: true,
         shape: const CircleBorder(),
         onPressed: () => _showReplyDialog(0,widget.topicId.toString()),//0表示回复楼主
@@ -567,7 +541,8 @@ class _TopicState extends State<Topic> {
         Expanded(
           child: RefreshIndicator(
             onRefresh: _fetchTopicData,
-            child: ListView.builder(
+            child: ListView.separated(
+              separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
               itemCount: replies.length + 1,
               itemBuilder: (context, index) {
                 if (index == replies.length) {

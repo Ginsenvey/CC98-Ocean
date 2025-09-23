@@ -143,7 +143,7 @@ class _SettingsState extends State<Settings> {
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
-        title: const Text("设定",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+        title: const Text("设定",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
 
       ),
       body: Padding(

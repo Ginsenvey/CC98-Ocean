@@ -182,7 +182,7 @@ Widget _buildPostItem(Post post,{Key? key}) {
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
-        title: const Text("今日话题",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+        title: const Text("今日话题",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
 
       ),
       body:LayoutBuilder(

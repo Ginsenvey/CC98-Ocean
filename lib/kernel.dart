@@ -391,4 +391,5 @@ class Deserializer{
   final list = jsonDecode(s) as List;
   return list.cast<Map<String, dynamic>>();
 }
+  
 }

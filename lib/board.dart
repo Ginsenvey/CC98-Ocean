@@ -1,100 +1,98 @@
+
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:cc98_ocean/boards.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/hyperlink_button.dart';
+import 'package:cc98_ocean/controls/pager.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/helper.dart';
 import 'package:cc98_ocean/kernel.dart';
-import 'package:cc98_ocean/main.dart';
+import 'package:cc98_ocean/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bbcode/flutter_bbcode.dart';
 
-///
-class BoardInfo {
+class StandardPost {
   final int id;
-  final String name;
-  final String description;
-  final List<String> boardMasters;
-  final int topicCount;
-  final int todayCount;
+  final String title;
+  final String userName;
+  final int replyCount;
+  final int hitCount;
 
-  BoardInfo({
+  StandardPost({
     required this.id,
-    required this.name,
-    required this.description,
-    required this.boardMasters,
-    required this.todayCount,
-    required this.topicCount,
+    required this.title,
+    required this.userName,
+    required this.replyCount,
+    required this.hitCount
   });
 
-  factory BoardInfo.fromJson(Map<String, dynamic> json) {
-    return BoardInfo(
+  factory StandardPost.fromJson(Map<String, dynamic> json) {
+    return StandardPost(
       id: json['id'] as int,
-      name: json['name'] as String,
-      description: json["description"] as String? ?? "暂无描述",
-      todayCount: json["todayCount"] as int,
-      topicCount: json["topicCount"] as int,
-      boardMasters: (json["boardMasters"] as List<dynamic>).map((e)=>e as String).toList()
+      title: json['title'] as String,
+      userName: json["userName"] as String? ??"匿名",
+      replyCount: json["replyCount"] as int,
+      hitCount: json["hitCount"] as int
     );
   }
 }
 
-class Section{
-  final String name;
-  final int id;
-  final List<BoardInfo> boards;
-  Section({
-    required this.boards,
-    required this.id,
-    required this.name,
-  });
 
-  factory Section.fromJson(Map<String,dynamic> json){
-    return Section(boards: (json["boards"] as List<dynamic>).map((e)=>BoardInfo.fromJson(e as Map<String,dynamic>)).toList(), 
-    id: json["id"] as int, 
-    name: json["name"] as String);
-  }
-}
-
-class Boards extends StatefulWidget {
-  const Boards({super.key});
+class Board extends StatefulWidget {
+  final int boardId;
+  const Board({super.key,required this.boardId});
 
   @override
-  State<Boards> createState() => _BoardsState();
+  State<Board> createState() => _BoardState();
 }
 
-class _BoardsState extends State<Boards> 
+class _BoardState extends State<Board> with TickerProviderStateMixin
 {
+  late final AnimationController _controller;
+  late final Animation<double> _sizeFactor; 
+  late final Animation<Offset> _slide;
+  bool _showBigPaper=false;
   bool isLoading = true;
   bool hasError = false;
   String errorMessage="";
-  List<dynamic> sections=[];
+  late BoardInfo data;
+  List<StandardPost> posts=[];
+  int currentPage=0;
+  int pageSize=20;
+  
 
   @override
   void initState() {
     super.initState();
-    _fetchSecttions();
+    getMetaData();
+     _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,                          // ← 合法
+    );
+    _slide = Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  _sizeFactor = Tween<double>(begin: 0, end: 1)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
-  Future<void> _fetchSecttions()async{
+  Future<void> getMetaData()async{
     setState(() {
-      sections.clear();
       isLoading = true;
       hasError = false;
     });
 
-  const String url="https://api.cc98.org/Board/all";
+  String url="https://api.cc98.org/board/${widget.boardId}";
   try{
     String res=await RequestSender.simpleRequest(url);
-  if(!res.startsWith("404:")){
-    final List<dynamic> data=json.decode(res);
-    final List<Section> newSections=data.map((e)=>Section.fromJson(e as Map<String,dynamic>)).toList();
-    setState(() {
-        sections.addAll(newSections);
-        isLoading = false;
+    getTopic();
+    if(!res.startsWith("404:")){
+      final _data=json.decode(res) as Map<String,dynamic>;
+      setState(() {
+        data=BoardInfo.fromJson(_data);
       });
-  }
+    }
   }catch(e){
     setState(() {
         isLoading = false;
@@ -102,7 +100,32 @@ class _BoardsState extends State<Boards>
         errorMessage = '加载失败: ${e.toString()}';
       });
   }
+  }
   
+  Future<void> getTopic()async{
+    
+    String url="https://api.cc98.org/board/${widget.boardId}/topic?from=${currentPage*pageSize}&size=$pageSize";
+    try{
+      final res=await RequestSender.simpleRequest(url);
+    if(!res.startsWith("404:")){
+      final data=json.decode(res) as List<dynamic>;
+      setState(() {
+        posts.clear();//在状态管理中处理UI数据源更新，而不是在外部
+        final newPosts=data.map((e)=>StandardPost.fromJson((e as Map<String,dynamic>))).toList();
+        posts.addAll(newPosts);
+        isLoading=false;
+      });
+    }
+    }
+    catch(e)
+    {
+      setState(() {
+        isLoading = false;
+        hasError = true;
+        errorMessage = '加载失败: ${e.toString()}';
+      });
+    }
+    
   }
 
    @override
@@ -118,111 +141,172 @@ class _BoardsState extends State<Boards>
         leading: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
+            icon: FluentIcons.chevron_left_16_regular,
             onPressed: () {
-              if (!kIsWeb) {
-                if (Platform.isAndroid || Platform.isIOS) {
-                   context.read<MyAppState>().drawerKey.currentState?.openDrawer();
-                }
-              }
+              Navigator.maybePop(context);
             },
           ),
         ),
         titleSpacing: 8,
         actions: [
-          FluentIconbutton(icon: FluentIcons.arrow_sync_16_regular,iconColor: ColorTokens.softPurple,),
+          FluentIconbutton(
+            icon: FluentIcons.pin_16_regular,
+            iconColor: ColorTokens.softPurple,
+            onPressed: () {
+              
+            },
+            ),
+          SizedBox(width: 6),
+          FluentIconbutton(
+            icon: FluentIcons.slide_text_16_regular,
+            iconColor: ColorTokens.softPurple,
+            onPressed: () {
+              setState(() => _showBigPaper = !_showBigPaper);
+              _showBigPaper? _controller.forward(): _controller.reverse();
+            },
+            ),
         ],
-        title: const Text("全部版面",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
-
+        title: Text(isLoading?"加载中···":data.name,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+        //对于late变量，我们确保已经初始化再调用
       ),
-      body: _buildContent(),
+      body:isLoading?const Center(child: CircularProgressIndicator()):buildLayout(),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child:isLoading?null:PageBar(currentPage: currentPage+1,totalPages:data.topicCount~/20,onJump:(p) {
+                setState(() {
+                  currentPage=p-1;
+                  getTopic();
+                });
+              }),
+        ),
+      ),
     );
   }
 
-  Widget _buildContent() {
-    if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
+  Widget buildLayout(){
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          if (_showBigPaper || _controller.value > 0)
+          SizeTransition(                 // ← 高度 0↔1
+      sizeFactor: _sizeFactor,
+      axisAlignment: -1,            // 从顶部开始展开
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        child: SlideTransition(       // ← 滑动 -1↔0
+          position: _slide,
+          child: buildBigPaper(),     // 真正内容
+        ),
+      ),
+    ),
+      
+          buildTopicList(posts),
+          
+        ],
+      ),
+    );
+  }
+
+  Widget buildBigPaper(){
+    final bigPaper=isLoading?"":data.bigPaper;
+    return Card(
+      elevation: 0,
+      color: ColorTokens.dividerBlue,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+        child: BBCodeText(data:BBCodeConverter.convertBBCode(bigPaper),stylesheet: defaultBBStylesheet(textStyle: TextStyle(fontSize: 12,color: Colors.black)),),
+      ));
+  }
+  Widget buildTopicList(List<StandardPost> posts){
     if (hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(FluentIcons.music_note_1_24_regular, size: 64, color: ColorTokens.primaryLight),
             const SizedBox(height: 16),
             Text(errorMessage),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchSecttions,
-              child: const Text('重试'),
-            ),
+            HyperlinkButton(onPressed: () => getTopic(),child: Text("刷新"))
           ],
         ),
       );
     }
-
-    return Column(
-      children: [
-        // 回复列表
-        Expanded(
-          child: ListView.builder(
-            itemCount: sections.length,
-            
-            itemBuilder: (context, index) {
-              return _buildSection(sections[index]);
-  
-            },
-          ),
+    //占位组件
+    if (!isLoading&&posts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(FluentIcons.music_note_1_24_regular, size: 64, color: ColorTokens.primaryLight),
+            const SizedBox(height: 16),
+            const Text('暂无帖子'),
+            const SizedBox(height: 8),
+            HyperlinkButton(onPressed: () => getTopic(),child: Text("刷新"))
+          ],
         ),
-      ],
+      );
+    }
+    return Expanded(
+      child: ListView.builder(
+        itemCount: posts.length,
+        shrinkWrap: true,
+        itemBuilder:(context,index){
+          return buildTopicCard(posts[index]);
+        } ),
     );
-
-    
   }
-  Widget _buildSection(Section section){
+
+  Widget buildTopicCard(StandardPost post){
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-      elevation: 3,
-      surfaceTintColor: ColorTokens.softPurple,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
-      child: Column(
-        children: [
-          ListTile(
-          title: Text(section.name,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(8),
-              topRight: Radius.circular(8),
+    key: ValueKey(post.id),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Topic(topicId: post.id),
             ),
-          ),
-          tileColor: ColorTokens.softBlue,
+          );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(FluentIcons.notepad_16_regular,size: 16,color: ColorTokens.softPurple,),
+            SizedBox(width: 6,),
+            Expanded(
+              child: Text(
+                  post.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+            ),
+            SizedBox(width: 6),
+            Text(post.userName,style:TextStyle(fontSize: 12) ,)      
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Wrap(
-            alignment: WrapAlignment.start,
-            runSpacing: 8,
-            spacing: 6,
-            children: section.boards.map((e)=>_buildBoardCard(e)).toList(),
-          ),
-        )
-        ],
       ),
-    );
+    ),
+  );
   }
-  Widget _buildBoardCard(BoardInfo info){
-    return TextButton(onPressed: ()=>{}, 
-    style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-
-    child: Text(info.name));
   }
-}

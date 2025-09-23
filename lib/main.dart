@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:cc98_ocean/board.dart';
+import 'package:cc98_ocean/boards.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/discover.dart';
@@ -14,7 +14,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sidebarx/sidebarx.dart';
 import 'package:url_launcher/url_launcher.dart';

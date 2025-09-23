@@ -357,7 +357,8 @@ class _ProfileState extends State<Profile> {
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
-        title: const Text("空间",style: TextStyle(fontSize: 16),)
+        centerTitle: true,
+        title: const Text("空间",style: TextStyle(fontSize: 16,color: ColorTokens.primaryLight,fontWeight: FontWeight.bold),)
 
       ),
       body: RefreshIndicator(child: _buildContent(),
@@ -458,7 +459,7 @@ class _HistoryHeaderDelegate extends SliverPersistentHeaderDelegate {
                   topRight: Radius.circular(8),
                 ),
               ),
-              tileColor: ColorTokens.softPurple,
+              tileColor: ColorTokens.softBlue,
             ),
     );
   }

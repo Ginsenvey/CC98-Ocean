@@ -198,7 +198,7 @@ class _TopicState extends State<Topic> {
                         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Profile(userId: reply['userId'] as int),
+              builder: (context) => Profile(userId: reply['userId'] as int,canEscape: true,),
             ),
           );
                       },

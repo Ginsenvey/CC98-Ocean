@@ -16,7 +16,8 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 class Profile extends StatefulWidget {
   final int userId;
-  const Profile({super.key, required this.userId});
+  final bool canEscape;
+  const Profile({super.key, required this.userId,required this.canEscape});
   
   @override
   State<Profile> createState() => _ProfileState();
@@ -268,22 +269,28 @@ class _ProfileState extends State<Profile> {
       ),
           const SizedBox(height: 12),
           signature.isNotEmpty
-              ? BBCodeText(data: BBCodeConverter.convertBBCode(signature),stylesheet: extendedStyle,)
-              : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: const Text(
-                        '该用户还没有设置签名档',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
+              ? Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: BBCodeText(data: BBCodeConverter.convertBBCode(signature),stylesheet: extendedStyle,),
+              )
+              : Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: const Text(
+                          '该用户还没有设置签名档',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
         ],
       ),
@@ -344,13 +351,18 @@ class _ProfileState extends State<Profile> {
         leading: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
+            icon:widget.canEscape?FluentIcons.chevron_left_16_regular:FluentIcons.panel_left_expand_16_regular,
             onPressed: () {
-              if (!kIsWeb) {
+              if(widget.canEscape){
+                Navigator.maybePop(context);
+              }else{
+                if (!kIsWeb) {
                 if (Platform.isAndroid || Platform.isIOS) {
                    context.read<MyAppState>().drawerKey.currentState?.openDrawer();
                 }
               }
+              }
+              
             },
           ),
         ),

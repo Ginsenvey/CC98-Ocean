@@ -236,8 +236,19 @@ Widget _buildPostItem(dynamic post) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 FluentIconbutton(icon: FluentIcons.share_16_regular,iconColor: colorScheme.primary,),
-                FluentIconbutton(icon: FluentIcons.chat_16_regular,iconColor: colorScheme.primary),
-                FluentIconbutton(icon: FluentIcons.chevron_up_16_regular,iconColor: colorScheme.primary)           
+                Row(
+                  spacing: 4,
+                  children: [
+                    FluentIconbutton(icon: FluentIcons.chat_16_regular,iconColor: colorScheme.primary),
+                    Text(post["replyCount"].toString(),style: TextStyle(color: ColorTokens.softPurple),)
+                  ],
+                ),
+                Row(
+                  children: [
+                    FluentIconbutton(icon: FluentIcons.chevron_up_16_regular,iconColor: colorScheme.primary),
+                    Text(post["likeCount"].toString(),style: TextStyle(color: ColorTokens.softPurple),)
+                  ],
+                )           
               ],
             ),
           ],

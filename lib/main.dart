@@ -4,6 +4,7 @@ import 'package:cc98_ocean/boards.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/discover.dart';
+import 'package:cc98_ocean/focus.dart';
 import 'package:cc98_ocean/index.dart';
 import 'package:cc98_ocean/kernel.dart';
 import 'package:cc98_ocean/network.dart';
@@ -41,7 +42,7 @@ class CC98 extends StatelessWidget {
       child: MaterialApp(
         title: 'CC98 Ocean',
         theme: AppThemes.light,
-        home:isLoggedIn? Home():Login(),
+        home:isLoggedIn?Home():Login()
       
       ),
     );
@@ -447,7 +448,7 @@ switch (selectedIndex) {
     page = Index();
     break;
   case 1:
-    page = Index();
+    page = Moments();
     break;
   case 2:
     page = Discover();
@@ -456,7 +457,7 @@ switch (selectedIndex) {
     page = Boards();
     break;
   case 4:
-    page=Profile(userId: 0);
+    page=Profile(userId: 0,canEscape: false,);
     break;
   case 5:
     page = Settings();

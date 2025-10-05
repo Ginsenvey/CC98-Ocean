@@ -1,28 +1,22 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:cc98_ocean/boards.dart';
+import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/hyperlink_button.dart';
+import 'package:cc98_ocean/controls/text_field.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
-import 'package:cc98_ocean/discover.dart';
-import 'package:cc98_ocean/focus.dart';
-import 'package:cc98_ocean/index.dart';
+import 'package:cc98_ocean/home.dart';
 import 'package:cc98_ocean/kernel.dart';
-import 'package:cc98_ocean/network.dart';
-import 'package:cc98_ocean/profile.dart';
-import 'package:cc98_ocean/settings.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:sidebarx/sidebarx.dart';
 import 'package:url_launcher/url_launcher.dart';
 
  void main()async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-
   await AuthService().init();
   
   // 检查登录状态
@@ -38,7 +32,7 @@ class CC98 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
+      create: (context) => AppState(),
       child: MaterialApp(
         title: 'CC98 Ocean',
         theme: AppThemes.light,
@@ -83,8 +77,8 @@ class RouteGuard extends NavigatorObserver {
     }
   }
 }
-class MyAppState extends ChangeNotifier {
-  final GlobalKey<ScaffoldState> drawerKey = GlobalKey<ScaffoldState>();
+class AppState extends ChangeNotifier {
+  
 }
 
 class Login extends StatefulWidget {
@@ -96,7 +90,7 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final Client client = Client();
-  Future<void> _login() async {
+  Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() {
@@ -210,43 +204,60 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
-  // 模拟登录验证
-  
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.of(context).size.height,
-          ),
+      body: buildLayout()
+    );
+  }
+
+  Widget buildLayout(){
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsetsGeometry.all(16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 36,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // 标题
-              const Text(
-                '欢迎回家',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
+              Center(child: buildTitle()),
+              Center(child: buildInputField()),
+              buildTip(),
+              buildOperation(),
+            ],
+          ),
+          ),
+      ),
+    );
+  }
+
+  Widget buildTitle(){
+    return Column(
+      children: [
+        SizedBox(height: 36),
+        const Text(
+              'CC98 Ocean',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: ColorTokens.primaryLight,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'CC98 Ocean',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+            ),
+        SizedBox(height: 8),
+        const Text(
+              '欢迎回家',
+              style: TextStyle(
+                fontSize: 16,
+                color: ColorTokens.softGrey,
               ),
-              const SizedBox(height: 40),
-              
-              // 登录表单
-              Form(
-                key: _formKey,
+            ),
+      ],
+    );
+  }
+
+  Widget buildInputField(){
+    return Form(key: _formKey,
                 child: Column(
                   children: [
                     // 邮箱/账号输入
@@ -310,31 +321,18 @@ class _LoginState extends State<Login> {
                       ),
                     
                     // 忘记密码
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          // 实际应用中跳转到密码重置页面
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('密码重置功能待实现'),
-                            ),
-                          );
-                        },
-                        child: const Text('忘记密码?'),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    
+                    const SizedBox(height: 36),
                     
                     // 登录按钮
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
+                        onPressed: _isLoading ? null : login,
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                         ),
                         
                           
@@ -342,48 +340,36 @@ class _LoginState extends State<Login> {
                         child: _isLoading?const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 3,
-                        ):const Text("登录",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold),),
-                    ),
-                )],
-                ),
-              ),
-              
-              const SizedBox(height: 30),
-              
-              // 其他登录方式
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '其他',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              ElevatedButton(onPressed:()async {
-                String status=await Network.checkNetwork();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status)));
-              }, child: Text("检查网络")),
-              const SizedBox(height: 20),
-              
-              // 注册链接
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('还没有账号?'),
-                  TextButton(
-                    onPressed: ()async {
-                      await launchUrl(
-      Uri.parse("https://www.cc98.org/logon"),
+                        ):const Text("登录",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold))))]));
+  }
+  Widget buildTip(){
+    return Card(
+      elevation: 0,
+      color: ColorTokens.dividerBlue,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
+      child:Padding(padding: EdgeInsetsGeometry.all(8),
+      child: Text("欢迎使用浙江大学校内论坛CC98的跨平台客户端。在登录之前,请阅读并遵守论坛规则。",style: TextStyle(color: ColorTokens.softGrey),),
+      ));
+  }
+  Widget buildOperation(){
+    return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档"),
+              SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
+              HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
+              SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
+              HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络"),
+           
+            ],
+          );
+  }
+
+  
+}
+Future<void> launch(String url)async{
+  await launchUrl(
+      Uri.parse(url),
       mode: LaunchMode.externalApplication, // 在外部浏览器打开
       // 可选配置:
       // mode: LaunchMode.inAppWebView, // 在应用内WebView打开
@@ -393,169 +379,8 @@ class _LoginState extends State<Login> {
       ),
       webOnlyWindowName: '_blank', // 网页版在新标签页打开
     );
-                    },
-                    child: const Text('立即注册'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-class Home extends StatefulWidget {
-  @override
-  State<Home> createState() => _HomeState();
-}
-
-
-class _HomeState extends State<Home> {
-  late SidebarXController _controller;
-  var selectedIndex = 0; 
-  
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = SidebarXController(selectedIndex: 0, extended: false);
-    // 1. 监听控制器变化
-    _controller.addListener(_onMenuChanged);
-
-    
-  }
-
-  void _onMenuChanged() {
-    setState(() {
-      selectedIndex = _controller.selectedIndex;
-
-    });
-  }
-  @override
-  void dispose() {
-    _controller.removeListener(_onMenuChanged);
-    _controller.dispose();
-    super.dispose();
-  }
-  @override
-  Widget build(BuildContext context) {
-    Widget page;
-switch (selectedIndex) {
-  case 0:
-    page = Index();
-    break;
-  case 1:
-    page = Moments();
-    break;
-  case 2:
-    page = Discover();
-    break;
-  case 3:
-    page = Boards();
-    break;
-  case 4:
-    page=Profile(userId: 0,canEscape: false,);
-    break;
-  case 5:
-    page = Settings();
-    break;
-  default:
-    throw UnimplementedError('no widget for $selectedIndex');
-}
-    final model = context.read<MyAppState>();
-    return LayoutBuilder(
-      builder: (context,constraints) {
-        return Scaffold(
-          key:model.drawerKey,
-          drawer:kIsWeb? null:(Platform.isAndroid||Platform.isIOS ? buildSideBar() : null),
-          body: SafeArea(
-            child: Row(
-              children: [
-                if(!kIsWeb)if(Platform.isWindows||Platform.isLinux||Platform.isMacOS)
-                  buildSideBar(),
-                if(kIsWeb)buildSideBar(),
-
-                Expanded(child: page),
-              ],
-            ),
-          ));
-          
-      }
-    );
-  }
-  Widget buildSideBar(){
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: SidebarX(controller: _controller,items: [
-                          SidebarXItem(icon: FluentIcons.design_ideas_16_regular,label: '首页',),
-                          SidebarXItem(icon: FluentIcons.star_line_horizontal_3_16_regular,label: '收藏'),
-                          SidebarXItem(icon: FluentIcons.leaf_one_16_regular,label: '发现'),
-                          SidebarXItem(icon: FluentIcons.board_16_regular,label: '版块'),
-                        ],
-                        extendIcon: FluentIcons.chevron_right_16_regular,
-                        collapseIcon: FluentIcons.chevron_left_16_regular,
-                        showToggleButton: MediaQuery.of(context).size.width>600,
-                        footerItems: [SidebarXItem(icon:FluentIcons.mail_all_read_20_regular,label: '我'),SidebarXItem(icon:FluentIcons.star_settings_20_regular,label: '设置'),],
-                        //展开时的主题
-                        extendedTheme: SidebarXTheme(width: 200,
-                        itemTextPadding: const EdgeInsets.only(left: 16),
-                        textStyle: TextStyle(
-                          color: ColorTokens.softPurple,
-                        ),
-                        selectedTextStyle: TextStyle(
-                          color:  ColorTokens.softOrange,
-                        ),
-                        selectedItemDecoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color:Colors.grey.withOpacity(0.12),
-                        ),
-                        selectedItemTextPadding: const EdgeInsets.only(left: 16),
-                        margin: kIsWeb?const EdgeInsets.fromLTRB(10, 12, 10, 12):((Platform.isAndroid||Platform.isIOS)?const EdgeInsets.fromLTRB(10, 120, 10, 120):const EdgeInsets.fromLTRB(10, 12, 10, 12)),
-                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
-                        //此装饰作用于整个导航板
-                        decoration: BoxDecoration(    
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
-                            width: 1,
-                        ),
-                        ),
-                        ),
-                        
-                  
-                        theme: SidebarXTheme(
-                        selectedItemMargin:EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        itemMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        margin: kIsWeb?const EdgeInsets.fromLTRB(10, 12, 10, 12):((Platform.isAndroid||Platform.isIOS)?const EdgeInsets.fromLTRB(10, 120, 10, 120):const EdgeInsets.fromLTRB(10, 12, 10, 12)),
-                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
-                        textStyle: TextStyle(
-                          color: ColorTokens.softPurple,
-                        ),
-                        selectedItemDecoration: BoxDecoration(
-                          
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.grey.withOpacity(0.12),
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppThemes.light.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        width: 64,  
-                        
-                        iconTheme: const IconThemeData(color: Color.fromARGB(255, 196, 171, 212)),
-                        selectedIconTheme: const IconThemeData(color: Color.fromARGB(255, 240, 128, 128)),
-                    ),
-                      ),
-    );
-  }
-}
 
 
 

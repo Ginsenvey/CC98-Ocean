@@ -170,7 +170,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
         //对于late变量，我们确保已经初始化再调用
       ),
       body:isLoading?const Center(child: CircularProgressIndicator()):buildLayout(),
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: SafeArea( 
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child:isLoading?null:PageBar(currentPage: currentPage+1,totalPages:data.topicCount~/20,onJump:(p) {
@@ -236,7 +236,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
             const SizedBox(height: 16),
             Text(errorMessage),
             const SizedBox(height: 16),
-            HyperlinkButton(onPressed: () => getTopic(),child: Text("刷新"))
+            HyperlinkButton(onPressed: () => getTopic(),text: "刷新",icon:FluentIcons.arrow_sync_16_regular ,)
           ],
         ),
       );
@@ -251,7 +251,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
             const SizedBox(height: 16),
             const Text('暂无帖子'),
             const SizedBox(height: 8),
-            HyperlinkButton(onPressed: () => getTopic(),child: Text("刷新"))
+            HyperlinkButton(onPressed: () => getTopic(),text: "刷新",icon:FluentIcons.arrow_sync_16_regular ,)
           ],
         ),
       );

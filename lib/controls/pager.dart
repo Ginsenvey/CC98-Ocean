@@ -77,6 +77,7 @@ Future<int?> _showJumpDialog(
         controller: ctl,
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
+          hintStyle: TextStyle(color: Colors.grey),
           hintText: '1 - $total',
           suffixText: '/$total',
         ),

@@ -123,13 +123,7 @@ class _BoardsState extends State<Boards>
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
             icon: FluentIcons.panel_left_expand_16_regular,
-            onPressed: () {
-              if (!kIsWeb) {
-                if (Platform.isAndroid || Platform.isIOS) {
-                   context.read<MyAppState>().drawerKey.currentState?.openDrawer();
-                }
-              }
-            },
+            
           ),
         ),
         titleSpacing: 8,
@@ -193,6 +187,7 @@ class _BoardsState extends State<Boards>
       surfaceTintColor: ColorTokens.softPurple,
       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
           title: Text(section.name,
@@ -206,7 +201,7 @@ class _BoardsState extends State<Boards>
           tileColor: ColorTokens.softBlue,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 8),
           child: Wrap(
             runAlignment: WrapAlignment.start,
             alignment: WrapAlignment.start,

@@ -14,11 +14,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class UserInfo{
+class SimpleUserInfo{
   final int userId;
   final String userName;
   final String portraitUrl;
-  UserInfo({
+  SimpleUserInfo({
     required this.userId,
     required this.userName,
     required this.portraitUrl
@@ -27,13 +27,13 @@ class UserInfo{
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is UserInfo && runtimeType == other.runtimeType && userId == other.userId&&userName==other.userName;
+      other is SimpleUserInfo && runtimeType == other.runtimeType && userId == other.userId&&userName==other.userName;
 
   @override
   int get hashCode => userId.hashCode;
 
-  factory UserInfo.fromJson(Map<String, dynamic> json) {
-    return UserInfo(
+  factory SimpleUserInfo.fromJson(Map<String, dynamic> json) {
+    return SimpleUserInfo(
       userId:json["userId"] as int,
       userName: json["userName"] as String? ??"匿名",
       portraitUrl: json["portraitUrl"]??""
@@ -49,15 +49,20 @@ class Moments extends StatefulWidget {
 }
 class _MomentsState extends State<Moments>{
   int _selected=0;
-  List<UserInfo> users=[];
+  List<SimpleUserInfo> users=[];
+  int currentPage=0;
+  int pageSize=20;
   bool isLoading=false;
   bool hasError=false;
+  bool hasMore=true;
   String errorMessage="";
   List<dynamic> posts=[];
+  final ScrollController controller=ScrollController();
 
   @override
   void initState() {
     super.initState();
+    controller.addListener(onScroll);
     getMoments();
   }
 
@@ -66,7 +71,8 @@ class _MomentsState extends State<Moments>{
       isLoading=true;
       hasError=false;
     });
-    String url="https://api.cc98.org/me/followee/topic?from=0&size=20&order=0";
+    
+    String url=_selected==0? "https://api.cc98.org/me/followee/topic?from=${currentPage*pageSize}&size=$pageSize&order=$_selected":"https://api.cc98.org/topic/me/favorite?from=${currentPage*pageSize}&size=$pageSize&order=$_selected";
     try{
       String res=await RequestSender.simpleRequest(url);
     if(!res.startsWith("404:")){
@@ -77,7 +83,7 @@ class _MomentsState extends State<Moments>{
         e['portraitUrl'] = portraitMap[e['userId'].toString()]??"";
           return e;
       });
-      final newUsers=data.map((e)=>UserInfo(userId: e["userId"] as int? ??0, userName: e["userName"] as String? ??"匿名", portraitUrl: e["portraitUrl"] as String? ??"")).where((e)=>e.portraitUrl!="").toSet().toList();
+      final newUsers=data.map((e)=>SimpleUserInfo(userId: e["userId"] as int? ??0, userName: e["userName"] as String? ??"匿名", portraitUrl: e["portraitUrl"] as String? ??"")).where((e)=>e.portraitUrl!="").toSet().toList();
       setState(() {
         users.clear();
         users.addAll(newUsers);
@@ -109,13 +115,7 @@ class _MomentsState extends State<Moments>{
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
             icon: FluentIcons.panel_left_expand_16_regular,
-            onPressed: () {
-              if (!kIsWeb) {
-                if (Platform.isAndroid || Platform.isIOS) {
-                   context.read<MyAppState>().drawerKey.currentState?.openDrawer();
-                }
-              }
-            },
+            
           ),
         ),
         titleSpacing: 8,
@@ -137,7 +137,7 @@ class _MomentsState extends State<Moments>{
             },
             ),
         ],
-        title: Text("动态",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+        title: Text("动态",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.softPurple),)
       ),
       body: buildLayout(),
     );
@@ -145,6 +145,7 @@ class _MomentsState extends State<Moments>{
 
   Widget buildLayout(){
     return CustomScrollView(
+    controller: controller,
     slivers: [
       // ① SegmentedControl
       SliverToBoxAdapter(
@@ -153,7 +154,15 @@ class _MomentsState extends State<Moments>{
           child: SegmentedControl(
               items: const ['关注', '追更'],
               initialIndex: _selected,
-              onSelected: (i) => setState(() => _selected = i),),
+              onSelected: (i) {
+                setState((){
+                  _selected=i;
+                  currentPage=0;
+                  hasMore=true;
+                  posts.clear();
+                } );
+                getMoments();
+              }),
         ),
       ),
       // ② SizedBox（占位或分隔）
@@ -164,6 +173,7 @@ class _MomentsState extends State<Moments>{
       // ③ 原 ListView 数据 → SliverList
       isLoading?SliverToBoxAdapter(child: const Center(child: CircularProgressIndicator(),),):
       SliverList.separated(
+        
         itemCount:posts.length ,
         itemBuilder: (context, index) => buildPostItem(posts[index]),
         separatorBuilder:(_, __) =>buildDivider()
@@ -187,7 +197,7 @@ class _MomentsState extends State<Moments>{
               }
   }
 
-  Widget buildUserList(List<UserInfo> users){
+  Widget buildUserList(List<SimpleUserInfo> users){
     return SizedBox(
       height: 84,
       child: Padding(
@@ -203,7 +213,7 @@ class _MomentsState extends State<Moments>{
       ),
     );
   }
-  Widget buildUserInfo(UserInfo info){
+  Widget buildUserInfo(SimpleUserInfo info){
     return ClickArea(
       onTap: () {
         Navigator.push(
@@ -376,6 +386,17 @@ class _MomentsState extends State<Moments>{
         ),
       ),
     ),
-  );
+  ); 
+}
+void onScroll() {
+    if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
+        currentPage++;
+        
+  }
+  }
+  @override
+  void dispose() {
+  controller.dispose();
+  super.dispose();
 }
 }

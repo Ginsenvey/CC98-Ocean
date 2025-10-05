@@ -2,6 +2,7 @@
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/pager.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/helper.dart';
 import 'package:cc98_ocean/kernel.dart';
@@ -37,6 +38,7 @@ class _TopicState extends State<Topic> {
   bool hasError = false;
   String errorMessage = '';
   int currentPage = 0;
+  int totalPages=1;
   final int pageSize = 10;
   bool hasMore = true;
   Client client = Client();
@@ -63,6 +65,7 @@ class _TopicState extends State<Topic> {
         final topicData = json.decode(topicResponse.body);
         setState(() {
           topicDetail = topicData;
+          totalPages=(topicDetail!["replyCount"] as int? ??0)~/10+1;
         });
       } else {
         throw Exception('获取帖子详情失败: ${topicResponse.statusCode}');
@@ -354,12 +357,12 @@ class _TopicState extends State<Topic> {
 
   // 处理点赞
   void _handleLike(int replyId)async {
-    bool success=await RequestSender().likeReply(replyId,"1");    
+    bool success=await RequestSender.likeReply(replyId,"1");    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(success?'已点赞回复 #$replyId':'点赞失败')),
     );
     
-    final newLikeStatus=await RequestSender().getLikeStatus(replyId);
+    final newLikeStatus=await RequestSender.getLikeStatus(replyId);
     if(newLikeStatus["success"]==0){
       ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('获取最新点赞状态失败')),
@@ -378,12 +381,12 @@ class _TopicState extends State<Topic> {
 
   // 处理点踩
   void _handleDislike(int replyId) async{
-    bool success=await RequestSender().likeReply(replyId,"2");    
+    bool success=await RequestSender.likeReply(replyId,"2");    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(success?'已点踩回复 #$replyId':'点踩失败')),
     );
     
-    final newLikeStatus=await RequestSender().getLikeStatus(replyId);
+    final newLikeStatus=await RequestSender.getLikeStatus(replyId);
     setState(() {
     final target = replies.firstWhere((e) => e['id'] == replyId);
     if(newLikeStatus["success"]==1){
@@ -506,6 +509,18 @@ class _TopicState extends State<Topic> {
         onPressed: () => _showReplyDialog(0,widget.topicId.toString()),//0表示回复楼主
         child: const Icon(FluentIcons.add_12_regular),
       ),
+      bottomNavigationBar: isLoading?null:(totalPages<4?null:SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: PageBar(currentPage: currentPage+1, totalPages: totalPages, onJump:(p){
+            setState(() {
+                      currentPage=p-1;
+                      replies.clear();
+                      _fetchReplies();
+                    });
+          } ),
+        ),
+      )),
     );
   }
 
@@ -543,9 +558,9 @@ class _TopicState extends State<Topic> {
             onRefresh: _fetchTopicData,
             child: ListView.separated(
               separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
-              itemCount: replies.length + 1,
+              itemCount:totalPages>3?replies.length :replies.length+1,
               itemBuilder: (context, index) {
-                if (index == replies.length) {
+                if (index == replies.length&&totalPages<4) {
                   return _buildLoadMoreIndicator();
                 }
                 return _buildReplyItem(replies[index]);

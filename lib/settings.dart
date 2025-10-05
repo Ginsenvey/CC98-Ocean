@@ -131,13 +131,6 @@ class _SettingsState extends State<Settings> {
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
             icon: FluentIcons.panel_left_expand_16_regular,
-            onPressed: () {
-              if (!kIsWeb) {
-                if (Platform.isAndroid || Platform.isIOS) {
-                   context.read<MyAppState>().drawerKey.currentState?.openDrawer();
-                }
-              }
-            },
           ),
         ),
         actions: [

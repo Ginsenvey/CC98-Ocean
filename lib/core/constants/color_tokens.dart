@@ -10,5 +10,6 @@ abstract class ColorTokens {
   static const Color softOrange=Color.fromARGB(255, 240, 128, 128);
   static const Color softBlue=Color(0xFFd1e1fb);
   static const Color softPink=Color(0xddfb7299);
+  static const Color softGrey=Color(0xff959595);
   static const Color dividerBlue= Color.fromARGB(255, 232, 244, 249);
 }

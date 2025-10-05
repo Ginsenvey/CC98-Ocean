@@ -281,7 +281,17 @@ class RequestSender{
       return "404:请求失败";   
     }
   }
-  Future<bool> likeReply(int replyId,String mode)async
+  static Future<String> getUserInfo(List<dynamic> userIds) async {
+    final String ids = userIds.map((e) =>"id=$e" ).join('&');
+    final String url="https://api.cc98.org/user?$ids";
+    final response = await Client().get(url);
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      return "404:请求失败";   
+    }
+  }
+  static Future<bool> likeReply(int replyId,String mode)async
   {
     String url="https://api.cc98.org/post/$replyId/like";
     //此处使用了utf编码，否则发送的是"1".
@@ -292,7 +302,7 @@ class RequestSender{
     }
     return false;
   }
-  Future<Map<String,int>> getLikeStatus(int replyId)async
+  static Future<Map<String,int>> getLikeStatus(int replyId)async
   {
     String url="https://api.cc98.org/post/$replyId/like";
     final res=await Client().get(url);

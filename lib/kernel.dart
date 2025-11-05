@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Client {
   static final Client _instance = Client._internal();
   factory Client() => _instance;
+  bool isVpnEnabled = false;
+  final VpnService vpnService=VpnService();
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static String? _accessToken;
   
@@ -97,15 +100,16 @@ class Client {
   // 统一请求方法
   Future<http.Response> _request(
     String method,
-    String url, {
+    String originUrl, {
     Map<String, String>? headers,
     Object? body,
     int retryCount = 0,
+    
   }) async {
     if (_accessToken == null) {
       await _loadToken();
     }
-    
+    String url=isVpnEnabled?VpnService.convertUrl(originUrl):originUrl;
     // 获取 Content-Type
     final contentType = headers?['Content-Type'] ?? 'application/json';
     
@@ -253,7 +257,7 @@ class AuthService
   }
 }
 class RequestSender{
-  Future<String> getNewTopic(int currentPage,int pageSize) async {
+  static Future<String> getNewTopic(int currentPage,int pageSize) async {
     final String url="https://api.cc98.org/topic/new?from=${currentPage * pageSize}&size=$pageSize";
     final response = await Client().get(url);
     if (response.statusCode == 200) {

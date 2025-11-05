@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/kernel.dart';
 import 'package:cc98_ocean/topic.dart';
@@ -26,7 +27,6 @@ class _DiscoverState extends State<Discover> {
   int currentPage = 0;
   int pageSize = 20;
   String errorMessage = '';
-  RequestSender r=RequestSender();
   @override
   void initState() {
     super.initState();
@@ -42,7 +42,7 @@ class _DiscoverState extends State<Discover> {
     });
 
     try {
-      String response=await r.getNewTopic(currentPage, pageSize);
+      String response=await RequestSender.getNewTopic(currentPage, pageSize);
       if(!response.startsWith("404:")){
         final List<dynamic> _data = json.decode(response);
         final List<String> userIds = _data.map((e) => e['userId'].toString()).toSet().toList();
@@ -67,21 +67,15 @@ class _DiscoverState extends State<Discover> {
       });
     }
   }
-  Future<void> _loadPrePage() async {
+  Future<void> _loadPrePage(BuildContext context) async {
     if (isLoading) return;
-    
-    setState(() {
-      if (currentPage <= 0){
+    if (currentPage <= 0){
         //提醒用户页码不能小于0
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已加载最新主题'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        InfoFlower.showContent(context,child: Text("已加载最新页面",style: TextStyle(color: ColorTokens.primaryLight),));
         currentPage = 0;
         return;
       } // 防止页码小于0
+    setState(() {
       currentPage--;
       posts.clear(); // 清空当前列表
       isLoading = true;
@@ -101,17 +95,7 @@ class _DiscoverState extends State<Discover> {
   }
 
   // 处理收藏操作
-  void _toggleFavorite(int postId) {
-    setState(() {
-      final postIndex = posts.indexWhere((post) => post.id == postId);
-      if (postIndex != -1) {
-        posts[postIndex].isFavorited = !posts[postIndex].isFavorited;
-      }
-    });
-    
-    // 这里可以添加实际的API调用
-    // _apiClient.post('/posts/$postId/favorite', body: {'favorite': posts[postIndex].isFavorited});
-  }
+  
 
   // 构建帖子列表项
 Widget _buildPostItem(dynamic post) {
@@ -278,11 +262,14 @@ Widget _buildPostItem(dynamic post) {
           borderRadius: BorderRadius.circular(6),
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
+        centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(icon: FluentIcons.chevron_left_16_regular,iconColor: ColorTokens.softPurple,onPressed: () =>_loadPrePage() ,),
+          child: FluentIconbutton(
+            icon:FluentIcons.chevron_left_16_regular,
+            onPressed: () => _loadPrePage(context)
+          ),
         ),
-        centerTitle: true,
         actions: [
           FluentIconbutton(icon: FluentIcons.chevron_right_16_regular,iconColor: ColorTokens.softPurple,onPressed: ()=>_loadNextPage(),),
         ],

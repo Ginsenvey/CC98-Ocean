@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:cc98_ocean/Friends.dart';
 import 'package:cc98_ocean/board.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/expand_button.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/helper.dart';
 import 'package:cc98_ocean/kernel.dart';
@@ -53,7 +52,7 @@ class _ProfileState extends State<Profile> {
   bool isLoading = true;
   bool hasError = false;
   bool isExpanded=true;
-  bool hasMore = true; // 是否还有更多数据
+  bool hasMore = true; 
   String errorMessage = '';
   Client client = Client();
   int currentPage = 0;
@@ -67,7 +66,6 @@ class _ProfileState extends State<Profile> {
   
   // 获取用户数据
   Future<void> fetchUserData() async {
-
     setState(() {
       isLoading = true;
       hasError = false;
@@ -109,7 +107,7 @@ class _ProfileState extends State<Profile> {
         setState(() {
           recentTopics.addAll(data);
           isLoading = false;
-          hasMore = newTopics.length == pageSize;
+          hasMore = data.length == pageSize;
         });
         // 如果返回的数量等于pageSize，说明还有更多数据 
       } else {
@@ -129,13 +127,13 @@ class _ProfileState extends State<Profile> {
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         titleSpacing: 8,
-        leading: Padding(
+        leading:widget.canEscape? Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
-            icon:widget.canEscape?FluentIcons.chevron_left_16_regular:FluentIcons.panel_left_expand_16_regular,
+            icon:FluentIcons.chevron_left_16_regular,
             onPressed: () => Navigator.maybePop(context),
           ),
-        ),
+        ):null,
         actions: [
           FluentIconbutton(icon: FluentIcons.settings_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context)=>Settings()));
@@ -344,8 +342,44 @@ class _ProfileState extends State<Profile> {
       child: ListView.builder(
         controller: controller,
         itemCount: recentTopics.length,
-        itemBuilder:(_,i)=>buildTopicCard(recentTopics[i])
-         ),
+        itemBuilder:(_,i){
+          return buildTopicCard(recentTopics[i]);
+        }
+    ));
+  }
+  // 加载更多回复
+  Future<void> loadMore() async {
+    if (!hasMore || isLoading) return;
+    
+    setState(() {
+      currentPage++;
+      isLoading = true;
+    });
+    
+    await getTopics();
+  }
+
+  // 构建加载更多指示器
+  Widget _buildLoadMoreIndicator() {
+    if (!hasMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text('没有更多回复了', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: isLoading
+            ? const CircularProgressIndicator()
+            : TextButton(
+                onPressed: loadMore,
+                child: const Text('加载更多回复'),
+              ),
+      ),
     );
   }
 

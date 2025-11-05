@@ -62,7 +62,7 @@ class _MomentsState extends State<Moments>{
   @override
   void initState() {
     super.initState();
-    controller.addListener(onScroll);
+    //controller.addListener(onScroll);
     getMoments();
   }
 
@@ -85,7 +85,7 @@ class _MomentsState extends State<Moments>{
       });
       final newUsers=data.map((e)=>SimpleUserInfo(userId: e["userId"] as int? ??0, userName: e["userName"] as String? ??"匿名", portraitUrl: e["portraitUrl"] as String? ??"")).where((e)=>e.portraitUrl!="").toSet().toList();
       setState(() {
-        users.clear();
+        //users.clear();
         users.addAll(newUsers);
         posts.addAll(data);
         isLoading = false;
@@ -111,13 +111,7 @@ class _MomentsState extends State<Moments>{
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
-            
-          ),
-        ),
+        
         titleSpacing: 8,
         actions: [
           FluentIconbutton(
@@ -147,7 +141,7 @@ class _MomentsState extends State<Moments>{
     return CustomScrollView(
     controller: controller,
     slivers: [
-      // ① SegmentedControl
+      // SegmentedControl
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 4),
@@ -165,12 +159,12 @@ class _MomentsState extends State<Moments>{
               }),
         ),
       ),
-      // ② SizedBox（占位或分隔）
+      // SizedBox（占位或分隔）
       SliverToBoxAdapter(
         child: buildUserList(users),
       ),
       SliverToBoxAdapter(child: buildDivider()),
-      // ③ 原 ListView 数据 → SliverList
+      //SliverList
       isLoading?SliverToBoxAdapter(child: const Center(child: CircularProgressIndicator(),),):
       SliverList.separated(
         
@@ -391,7 +385,7 @@ class _MomentsState extends State<Moments>{
 void onScroll() {
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
         currentPage++;
-        
+        getMoments();
   }
   }
   @override

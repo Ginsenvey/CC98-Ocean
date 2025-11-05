@@ -207,14 +207,14 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
         ),
       ),
     ),
-      
+
           buildTopicList(posts),
           
         ],
       ),
     );
   }
-
+  
   Widget buildBigPaper(){
     final bigPaper=isLoading?"":data.bigPaper;
     return Card(

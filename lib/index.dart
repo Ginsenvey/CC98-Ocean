@@ -166,13 +166,7 @@ Widget _buildPostItem(Post post,{Key? key}) {
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
-           
-          ),
-        ),
+        
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
@@ -183,12 +177,10 @@ Widget _buildPostItem(Post post,{Key? key}) {
         builder: (_,box){
           final width=box.maxWidth;
           final crossCount = width < 600 ? 1 : width ~/ 300;
-          return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          child:isLoading?
+          return isLoading?
           const Center(child: CircularProgressIndicator(),
-        ):
-        MasonryGridView.count(
+                  ):
+                  MasonryGridView.count(
           crossAxisCount: crossCount,
           mainAxisSpacing: 15,
           crossAxisSpacing: 15,
@@ -196,8 +188,7 @@ Widget _buildPostItem(Post post,{Key? key}) {
           itemBuilder: (context, index) {
             return _buildSection(sections[index]);
           },
-        )
-        );
+                  );
         }
         
       )
@@ -205,31 +196,24 @@ Widget _buildPostItem(Post post,{Key? key}) {
     
   }
   Widget _buildSection(Section section ) {
-    ColorScheme colorScheme = ColorScheme.fromSeed(seedColor: ColorTokens.softOrange);
-  return Card(
-    elevation: 4,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        // 标题栏
-        ListTile(
-          title: Text(section.description,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(8),
-              topRight: Radius.circular(8),
-            ),
-          ),
-          tileColor: colorScheme.primaryContainer ,
-        ),
-        // 帖子列表
-        _buildContent(section.posts),
-      ],
-    ),
+  
+  return Column(
+    mainAxisSize: MainAxisSize.max,
+    children: [
+      // 标题栏
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(width: 10),
+          Text(section.description,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+      // 帖子列表
+      Divider(thickness: 2,color: ColorTokens.primaryLight,indent: 6,endIndent: 6,),
+      _buildContent(section.posts),
+      const SizedBox(height: 6,)
+    ],
   );
 }
   Widget _buildContent(List<Post> posts) {

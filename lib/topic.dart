@@ -2,6 +2,7 @@
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/pager.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/helper.dart';
@@ -45,11 +46,11 @@ class _TopicState extends State<Topic> {
   @override
   void initState() {
     super.initState();
-    _fetchTopicData();
+    getTopicData();
   }
 
   // 获取帖子详情
-  Future<void> _fetchTopicData() async {
+  Future<void> getTopicData() async {
     setState(() {
       isLoading = true;
       hasError = false;
@@ -74,7 +75,7 @@ class _TopicState extends State<Topic> {
       // 获取回复列表
       currentPage = 0;
       replies.clear();
-      await _fetchReplies();
+      await getReply();
     } catch (e) {
       setState(() {
         hasError = true;
@@ -85,7 +86,7 @@ class _TopicState extends State<Topic> {
   }
 
   // 获取回复列表
-  Future<void> _fetchReplies() async {
+  Future<void> getReply() async {
     try {
       final response = await client.get(
         'https://api.cc98.org/Topic/${widget.topicId}/post?from=${currentPage * pageSize}&size=$pageSize'
@@ -118,7 +119,7 @@ class _TopicState extends State<Topic> {
   }
 
   // 加载更多回复
-  Future<void> _loadMoreReplies() async {
+  Future<void> loadMore() async {
     if (!hasMore || isLoading) return;
     
     setState(() {
@@ -126,11 +127,11 @@ class _TopicState extends State<Topic> {
       isLoading = true;
     });
     
-    await _fetchReplies();
+    await getReply();
   }
 
   // 构建顶部标题横幅
-  Widget _buildTitleBanner() {
+  Widget buildTitleBanner() {
     
     if (topicDetail == null) return Container();
 
@@ -272,39 +273,33 @@ class _TopicState extends State<Topic> {
             const SizedBox(height: 16),
             // 点赞和点踩数据
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    // 点赞数
-                    _buildReactionChip(
-                      icon: reply["likeState"] as int==1?FluentIcons.chevron_up_12_filled:FluentIcons.chevron_up_12_regular,
-                      count: reply['likeCount'] ?? 0,
-                      onPressed: () => _handleLike(reply['id']),
-                    ),
-                    const SizedBox(width: 12),
-                    // 点踩数
-                    _buildReactionChip(
-                      icon: reply["likeState"] as int==2?FluentIcons.chevron_down_12_regular:FluentIcons.chevron_down_12_regular,
-                      count: reply['dislikeCount'] ?? 0,
-                      onPressed: () => _handleDislike(reply['id']),
-                    ),
-                  ],
+                // 点赞数
+                _buildReactionChip(
+                  icon: reply["likeState"] as int==1?FluentIcons.chevron_up_12_filled:FluentIcons.chevron_up_12_regular,
+                  count: reply['likeCount'] ?? 0,
+                  onPressed: () => _handleLike(reply['id']),
                 ),
-    TextButton(
-      onPressed: () => _handleReplyAction("reply", reply),
-      style: TextButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: ColorTokens.softBlue),
-        ),
-        padding: const EdgeInsets.all(6),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        minimumSize: const Size(0, 0),
-      ),
-      child: Icon(FluentIcons.more_horizontal_16_regular, size: 16),
-    )
-      
+                const SizedBox(width: 6),
+                // 点踩数
+                _buildReactionChip(
+                  icon: reply["likeState"] as int==2?FluentIcons.chevron_down_12_regular:FluentIcons.chevron_down_12_regular,
+                  count: reply['dislikeCount'] ?? 0,
+                  onPressed: () => _handleDislike(reply['id']),
+                ),
+                const SizedBox(width: 6),
+                TextButton(
+                  onPressed: () => _handleReplyAction("reply", reply),
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(0, 0),
+                  ),
+                  child: Icon(FluentIcons.comment_16_regular, size: 16),
+                )
               ],
             ),
           ],
@@ -323,7 +318,7 @@ class _TopicState extends State<Topic> {
      style: TextButton.styleFrom(
        shape: RoundedRectangleBorder(
          borderRadius: BorderRadius.circular(4),
-         side: BorderSide(color: ColorTokens.softBlue),
+      
        ),
        padding: const EdgeInsets.all(6),
        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -358,9 +353,7 @@ class _TopicState extends State<Topic> {
   // 处理点赞
   void _handleLike(int replyId)async {
     bool success=await RequestSender.likeReply(replyId,"1");    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success?'已点赞回复 #$replyId':'点赞失败')),
-    );
+    InfoFlower.showContent(context, child: Text(success?"已点赞回复$replyId":"点赞失败"));
     
     final newLikeStatus=await RequestSender.getLikeStatus(replyId);
     if(newLikeStatus["success"]==0){
@@ -382,9 +375,7 @@ class _TopicState extends State<Topic> {
   // 处理点踩
   void _handleDislike(int replyId) async{
     bool success=await RequestSender.likeReply(replyId,"2");    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success?'已点踩回复 #$replyId':'点踩失败')),
-    );
+    InfoFlower.showContent(context, child: Text(success?"已点踩回复$replyId":"点踩失败"));
     
     final newLikeStatus=await RequestSender.getLikeStatus(replyId);
     setState(() {
@@ -438,16 +429,15 @@ class _TopicState extends State<Topic> {
                   res=await RequestSender.sendReplyToTopic(widget.topicId,content,false,false,0,true,replyId);
                 } 
                 if(res=="1"){
-                ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('回复已提交')),
+                InfoFlower.showContent(context,child: Text("回复已提交",style: TextStyle(color: ColorTokens.primaryLight))
               );
               }else{
-                ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('回复失败:$res')),
+                InfoFlower.showContent(context,child: Text("回复已提交",style: TextStyle(color: ColorTokens.primaryLight))
               );
               }
               }
               Navigator.pop(context);
+
             }, 
           ),
     );
@@ -473,7 +463,7 @@ class _TopicState extends State<Topic> {
         child: isLoading
             ? const CircularProgressIndicator()
             : TextButton(
-                onPressed: _loadMoreReplies,
+                onPressed: loadMore,
                 child: const Text('加载更多回复'),
               ),
       ),
@@ -516,7 +506,7 @@ class _TopicState extends State<Topic> {
             setState(() {
                       currentPage=p-1;
                       replies.clear();
-                      _fetchReplies();
+                      getReply();
                     });
           } ),
         ),
@@ -539,7 +529,7 @@ class _TopicState extends State<Topic> {
             Text(errorMessage),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _fetchTopicData,
+              onPressed: getTopicData,
               child: const Text('重试'),
             ),
           ],
@@ -550,12 +540,12 @@ class _TopicState extends State<Topic> {
     return Column(
       children: [
         // 标题横幅
-        _buildTitleBanner(),
+        buildTitleBanner(),
         const SizedBox(height: 8),
         // 回复列表
         Expanded(
           child: RefreshIndicator(
-            onRefresh: _fetchTopicData,
+            onRefresh: getTopicData,
             child: ListView.separated(
               separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
               itemCount:totalPages>3?replies.length :replies.length+1,

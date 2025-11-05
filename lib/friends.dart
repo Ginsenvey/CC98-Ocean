@@ -202,7 +202,7 @@ class _FriendsState extends State<Friends>{
               height: 36,
               width: 36,
               child: ClickArea(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>Profile(userId: info.id, canEscape: true))),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>Profile(userId: info.id,canEscape: true,))),
                 child: ClipOval(
                   child: Image.network(info.portraitUrl,height: 36,width: 36,errorBuilder: (context, error, stackTrace) => Text("")), 
                 ),

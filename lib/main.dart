@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/hyperlink_button.dart';
+import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/text_field.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/home.dart';
 import 'package:cc98_ocean/kernel.dart';
@@ -359,14 +361,29 @@ class _LoginState extends State<Login> {
               SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
               HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
               SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络"),
-           
+              HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",),
             ],
           );
   }
 
-  
 }
+
+///检查网络。无网络时显示红色状态，并提示用户网络问题。
+Future<bool> initializeNetwork()async{
+    var r=await VpnService.checkNetwork();
+    if(r=="1"){
+      //成功，允许登录，显示状态，提示网络正常
+      return true;
+    }
+    else{
+      if(r=="0"){
+        //失败，检查VPN可用性。如可用，使用vpn模式检查网络。如仍无法连接，认为TWFID过期；如不可用，显示状态VPN未配置。
+        return true;
+      }
+      return true;
+    }
+}
+
 Future<void> launch(String url)async{
   await launchUrl(
       Uri.parse(url),

@@ -119,13 +119,7 @@ class _BoardsState extends State<Boards>
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
-            
-          ),
-        ),
+        
         titleSpacing: 8,
         actions: [
           FluentIconbutton(icon: FluentIcons.arrow_sync_16_regular,iconColor: ColorTokens.softPurple,),
@@ -170,7 +164,7 @@ class _BoardsState extends State<Boards>
             itemCount: sections.length,
             
             itemBuilder: (context, index) {
-              return _buildSection(sections[index]);
+              return buildSection(sections[index]);
   
             },
           ),
@@ -180,10 +174,9 @@ class _BoardsState extends State<Boards>
 
     
   }
-  Widget _buildSection(Section section){
+  Widget buildSection(Section section){
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-      elevation: 3,
+      elevation: 0,
       surfaceTintColor: ColorTokens.softPurple,
       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
       child: Column(
@@ -198,8 +191,8 @@ class _BoardsState extends State<Boards>
               topRight: Radius.circular(8),
             ),
           ),
-          tileColor: ColorTokens.softBlue,
         ),
+        Divider(thickness: 1,height: 4,color: ColorTokens.dividerBlue,indent: 6,endIndent: 6,),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 8),
           child: Wrap(
@@ -207,14 +200,14 @@ class _BoardsState extends State<Boards>
             alignment: WrapAlignment.start,
             runSpacing: 8,
             spacing: 6,
-            children: section.boards.map((e)=>_buildBoardCard(e)).toList(),
+            children: section.boards.map((e)=>buildBoardCard(e)).toList(),
           ),
         )
         ],
       ),
     );
   }
-  Widget _buildBoardCard(BoardInfo info){
+  Widget buildBoardCard(BoardInfo info){
     return TextButton(onPressed: ()=>{
       Navigator.push(
             context,
@@ -226,6 +219,7 @@ class _BoardsState extends State<Boards>
     style: TextButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: ColorTokens.dividerBlue)
               ),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),

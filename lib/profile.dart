@@ -1,5 +1,6 @@
 import 'package:cc98_ocean/Friends.dart';
 import 'package:cc98_ocean/board.dart';
+import 'package:cc98_ocean/chat.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/expand_button.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
@@ -8,6 +9,7 @@ import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/helper.dart';
 import 'package:cc98_ocean/kernel.dart';
+import 'package:cc98_ocean/mailbox.dart';
 import 'package:cc98_ocean/settings.dart';
 import 'package:cc98_ocean/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -135,6 +137,9 @@ class _ProfileState extends State<Profile> {
           ),
         ):null,
         actions: [
+          FluentIconbutton(icon: FluentIcons.mail_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>Mailbox()));
+          },),
           FluentIconbutton(icon: FluentIcons.settings_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context)=>Settings()));
           },),

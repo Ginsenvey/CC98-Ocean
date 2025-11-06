@@ -9,6 +9,7 @@ import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/home.dart';
 import 'package:cc98_ocean/kernel.dart';
+import 'package:cc98_ocean/profile.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
@@ -38,7 +39,7 @@ class CC98 extends StatelessWidget {
       child: MaterialApp(
         title: 'CC98 Ocean',
         theme: AppThemes.light,
-        home:isLoggedIn?Home():Login()
+        home:Profile(userId: 0, canEscape: true)
       
       ),
     );
@@ -209,7 +210,8 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: buildLayout()
+      body: buildLayout(),
+      bottomNavigationBar: buildOperation(),
     );
   }
 
@@ -226,7 +228,7 @@ class _LoginState extends State<Login> {
               Center(child: buildTitle()),
               Center(child: buildInputField()),
               buildTip(),
-              buildOperation(),
+              
             ],
           ),
           ),
@@ -354,16 +356,18 @@ class _LoginState extends State<Login> {
       ));
   }
   Widget buildOperation(){
-    return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档"),
-              SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
-              SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",),
-            ],
-          );
+    return SafeArea(
+      child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档"),
+                SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
+                HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
+                SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
+                HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",),
+              ],
+            ),
+    );
   }
 
 }

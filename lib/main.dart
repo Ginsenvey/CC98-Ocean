@@ -1,15 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/hyperlink_button.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
-import 'package:cc98_ocean/controls/text_field.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/home.dart';
+import 'package:cc98_ocean/index.dart';
 import 'package:cc98_ocean/kernel.dart';
-import 'package:cc98_ocean/profile.dart';
+import 'package:cc98_ocean/mailbox.dart';
+import 'package:cc98_ocean/topic.dart';
+import 'package:cc98_ocean/vpn_setup.dart';
+
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
@@ -21,16 +22,14 @@ import 'package:url_launcher/url_launcher.dart';
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
   await AuthService().init();
-  
-  // 检查登录状态
-  final isLoggedIn = await AuthService().getLoginStatus();
-  runApp(CC98(isLoggedIn: isLoggedIn));
+  bool loginStatus=await AuthService().getLoginStatus();
+  runApp(CC98(appState:loginStatus?1:0));
 }
 
 class CC98 extends StatelessWidget {
-  final bool isLoggedIn;
+  final int appState;
   
-  const CC98({super.key, required this.isLoggedIn});
+  const CC98({super.key, required this.appState});
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +38,7 @@ class CC98 extends StatelessWidget {
       child: MaterialApp(
         title: 'CC98 Ocean',
         theme: AppThemes.light,
-        home:Profile(userId: 0, canEscape: true)
-      
+        home:appState==1?Home():Login(),                                               
       ),
     );
   }
@@ -92,8 +90,14 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final Client client = Client();
   Future<void> login() async {
+    //以下判断用于快速调试。
+    final r=await AuthService().setLoginStatus(true);
+        if(r&&await AuthService().getLoginStatus()){
+          InfoFlower.showContent(context, child: Text("登录成功"));
+          Navigator.push(context, MaterialPageRoute(builder: (context)=>Home()));
+          return;
+        }
     if (!_formKey.currentState!.validate()) return;
     
     setState(() {
@@ -106,17 +110,14 @@ class _LoginState extends State<Login> {
       final username = _idController.text.trim();
       final password = _passwordController.text.trim();
       String res=await AuthService.loginAsync(username,password);
+      
       if(res=="1"){
         final r=await AuthService().setLoginStatus(true);
         if(r&&await AuthService().getLoginStatus()){
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已保存凭据')),
-          );
+          InfoFlower.showContent(context, child: Text("登录成功"));
+          Navigator.push(context, MaterialPageRoute(builder: (context)=>Home()));
         }
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Home()),
-          );
+        
       }
       else{
         String errorMessage=res;
@@ -217,22 +218,20 @@ class _LoginState extends State<Login> {
 
   Widget buildLayout(){
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsetsGeometry.all(16),
-          child: Column(
-            spacing: 36,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Center(child: buildTitle()),
-              Center(child: buildInputField()),
-              buildTip(),
-              
-            ],
-          ),
-          ),
-      ),
+      child: Padding(
+        padding: EdgeInsetsGeometry.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(flex: 3,child: buildTitle()),
+            Expanded(flex: 4, child: buildInputField()),
+            Expanded(flex: 1, child: buildButton()),
+            Expanded(flex: 2,child: Center(child: buildTip())),
+            
+          ],
+        ),
+        ),
     );
   }
 
@@ -323,13 +322,13 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
-                    
-                    // 忘记密码
-                    
-                    const SizedBox(height: 36),
-                    
+                    // 忘记密码              
+                    const SizedBox(height: 36),    
                     // 登录按钮
-                    SizedBox(
+                    ]));
+  }
+  Widget buildButton(){
+    return SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
@@ -344,7 +343,7 @@ class _LoginState extends State<Login> {
                         child: _isLoading?const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 3,
-                        ):const Text("登录",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold))))]));
+                        ):const Text("登录",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold))));
   }
   Widget buildTip(){
     return Card(
@@ -356,15 +355,25 @@ class _LoginState extends State<Login> {
       ));
   }
   Widget buildOperation(){
-    return SafeArea(
+    return SafeArea( 
       child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档"),
+                HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档",onPressed: ()async{
+                  InfoFlower.showContent(context, child: Text(await AuthService().getLoginStatus()?"已登录":"未登录"));
+                },),
                 SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
                 HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
                 SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-                HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",),
+                HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",onPressed: ()async{
+                  final appState=await AuthService().initializeNetwork();
+                  setState(() {
+                    _errorMessage=appState.toString();
+                  });
+                  if(appState==2||appState==3){
+                    Navigator.push(context, MaterialPageRoute(builder:(context)=>VpnSetup()));
+                  }
+                },),
               ],
             ),
     );
@@ -372,21 +381,7 @@ class _LoginState extends State<Login> {
 
 }
 
-///检查网络。无网络时显示红色状态，并提示用户网络问题。
-Future<bool> initializeNetwork()async{
-    var r=await VpnService.checkNetwork();
-    if(r=="1"){
-      //成功，允许登录，显示状态，提示网络正常
-      return true;
-    }
-    else{
-      if(r=="0"){
-        //失败，检查VPN可用性。如可用，使用vpn模式检查网络。如仍无法连接，认为TWFID过期；如不可用，显示状态VPN未配置。
-        return true;
-      }
-      return true;
-    }
-}
+
 
 Future<void> launch(String url)async{
   await launchUrl(

@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/discover.dart';
+import 'package:cc98_ocean/helper.dart';
 import 'package:cc98_ocean/kernel.dart';
 import 'package:cc98_ocean/main.dart';
 import 'package:cc98_ocean/profile.dart';
@@ -34,8 +37,8 @@ class SimpleUserInfo{
 
   factory SimpleUserInfo.fromJson(Map<String, dynamic> json) {
     return SimpleUserInfo(
-      userId:json["userId"] as int,
-      userName: json["userName"] as String? ??"匿名",
+      userId:json["id"] as int? ??0,
+      userName: json["name"] as String? ??"匿名",
       portraitUrl: json["portraitUrl"]??""
     );
   }
@@ -62,7 +65,6 @@ class _MomentsState extends State<Moments>{
   @override
   void initState() {
     super.initState();
-    //controller.addListener(onScroll);
     getMoments();
   }
 
@@ -76,17 +78,23 @@ class _MomentsState extends State<Moments>{
     try{
       String res=await RequestSender.simpleRequest(url);
     if(!res.startsWith("404:")){
-      final List<dynamic> _data = json.decode(res);
-      final List<String> userIds = _data.map((e) => e['userId'].toString()).toSet().toList();
+      List list = json.decode(res) as List;
+      final data=list.map((e)=>Post.fromJson(e as Map<String,dynamic>)).toList();
+      final List<int> userIds = data.map((e) => e.userId).toSet().toList();
       final portraitMap=Deserializer.parseUserPortrait(await RequestSender().getUserPortrait(userIds));
-      final data=_data.map((e){
-        e['portraitUrl'] = portraitMap[e['userId'].toString()]??"";
-          return e;
-      });
-      final newUsers=data.map((e)=>SimpleUserInfo(userId: e["userId"] as int? ??0, userName: e["userName"] as String? ??"匿名", portraitUrl: e["portraitUrl"] as String? ??"")).where((e)=>e.portraitUrl!="").toSet().toList();
+      for (var e in data) {
+          SimpleUserInfo? user;
+          try {
+            user = portraitMap.firstWhere((u) => u.userId == e.userId);
+          } catch (_) {
+            user = null;
+          }
+          if (user != null) {
+            e.portraitUrl = user.portraitUrl;
+          }
+      }
       setState(() {
-        //users.clear();
-        users.addAll(newUsers);
+        users.addAll(portraitMap);
         posts.addAll(data);
         isLoading = false;
       });
@@ -111,7 +119,6 @@ class _MomentsState extends State<Moments>{
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        
         titleSpacing: 8,
         actions: [
           FluentIconbutton(
@@ -167,11 +174,9 @@ class _MomentsState extends State<Moments>{
       //SliverList
       isLoading?SliverToBoxAdapter(child: const Center(child: CircularProgressIndicator(),),):
       SliverList.separated(
-        
         itemCount:posts.length ,
         itemBuilder: (context, index) => buildPostItem(posts[index]),
         separatorBuilder:(_, __) =>buildDivider()
-        
         ),
     ],
   );
@@ -220,40 +225,15 @@ class _MomentsState extends State<Moments>{
       child: Column(
         spacing: 6,
         children: [
-          ClipOval(child: Image.network(
-                              info.portraitUrl,
-                              width: 36,
-                              height: 36,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return SizedBox(
-                                  width: 36,
-                                  height: 36,
-                                  child: Text(
-                                    info.userName[0],
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: ColorTokens.softPink,
-                                      fontWeight: FontWeight.bold,
-                                      
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-            
-             Text(info.userName,style: TextStyle(color: ColorTokens.softPurple,fontSize: 10),)               
-              
+          PortraitOval(url: info.portraitUrl),
+          Text(info.userName,style: TextStyle(color: ColorTokens.softPurple,fontSize: 10),)                     
         ],
       ),
     );
   }
 
-  Widget buildPostItem(dynamic post) {
-  final ColorScheme colorScheme=ColorScheme.fromSeed(seedColor: ColorTokens.primaryLight);
-  final mediaMap=post["mediaContent"] as Map<String,dynamic>? ??{};//取出第一层
+  Widget buildPostItem(Post post) {
+  final mediaMap=post.mediaContent;//取出第一层
   final thumbNails=(mediaMap["thumbnail"] as List<dynamic>?)?.cast<String>()??<String>[];
   return Card( 
     elevation: 0,
@@ -264,7 +244,7 @@ class _MomentsState extends State<Moments>{
       onTap: ()=>{Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Topic(topicId: post['id']),
+              builder: (context) => Topic(topicId: post.id),
             ),
           )},
       child: Padding(
@@ -276,32 +256,7 @@ class _MomentsState extends State<Moments>{
             Row(
               children: [
                 // 作者头像
-                ClipOval(
-                          child: post["userName"]==null?Text("匿",textAlign: TextAlign.center,style: const TextStyle(
-                                  fontSize: 14,
-                                  color: ColorTokens.softPink,
-                                  fontWeight: FontWeight.bold,
-                                ),):Image.network(
-                            post['portraitUrl'],
-                            width: 36,
-                            height: 36,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Text(
-                                (post['userName'] != null && post['userName'] != '')
-                                    ? post['userName'][0]
-                                    : '匿',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: ColorTokens.softPink,
-                                  fontWeight: FontWeight.bold,
-                                  
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                PortraitOval(url: post.portraitUrl),
                 const SizedBox(width: 12),
                 // 作者名和发布时间
                 Expanded(
@@ -309,7 +264,7 @@ class _MomentsState extends State<Moments>{
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        post['userName'] ?? '@ 匿名',
+                        post.userName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -318,9 +273,7 @@ class _MomentsState extends State<Moments>{
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        DateFormat('yyyy-MM-dd HH:mm').format(post['time'] is DateTime
-                            ? post['createdAt']
-                            : DateTime.parse(post['time'])),
+                        post.time.toUtc8,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -336,7 +289,7 @@ class _MomentsState extends State<Moments>{
             const SizedBox(height: 12),
             // 帖子标题
             Text(
-                post['title'],
+                post.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -368,13 +321,16 @@ class _MomentsState extends State<Moments>{
                     .toList(),
               ),
             // 回复数和浏览量
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FluentIconbutton(icon: FluentIcons.share_16_regular,iconColor: colorScheme.primary,),
-                FluentIconbutton(icon: FluentIcons.chat_16_regular,iconColor: colorScheme.primary),
-                FluentIconbutton(icon: FluentIcons.chevron_up_16_regular,iconColor: colorScheme.primary)           
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6,vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  buildStatItem(FluentIcons.fire_16_regular, post.hitCount),
+                  buildStatItem(FluentIcons.chat_16_regular, post.replyCount),
+                  buildStatItem(FluentIcons.chevron_up_16_regular, post.likeCount)     
+                ],
+              ),
             ),
           ],
         ),
@@ -382,6 +338,14 @@ class _MomentsState extends State<Moments>{
     ),
   ); 
 }
+Widget buildStatItem(IconData icon,int count){
+    return Row(
+      spacing: 4,
+      children: [
+      Icon(icon,color: ColorTokens.softPurple,size: 12),
+      Text(count.toString(),style: TextStyle(color: ColorTokens.softPurple))
+    ]);
+  }
 void onScroll() {
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
         currentPage++;

@@ -1,9 +1,9 @@
 import 'dart:io';
-
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/focus.dart';
 import 'package:cc98_ocean/kernel.dart';
 import 'package:cc98_ocean/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -12,6 +12,48 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+class Post{
+  final int id;
+  final int userId;
+  int likeCount;
+  int dislikeCount;
+  int replyCount;
+  int hitCount;
+  final String userName;
+  final String title;
+  final String time;
+  final bool isMe;
+  String portraitUrl=""; 
+  final Map<String,dynamic> mediaContent;
+  Post({
+    required this.id,
+    required this.isMe,
+    required this.userId,
+    required this.dislikeCount,
+    required this.hitCount,
+    required this.likeCount,
+    required this.replyCount,
+    required this.time,
+    required this.title,
+    required this.userName,
+    required this.mediaContent
+  });
+  factory Post.fromJson(Map<String,dynamic> json){
+    return Post(
+      id:json["id"] as int? ??0,
+      isMe: json["isMe"] as bool? ??false,
+      userId: json["userId"] as int? ??0,
+      dislikeCount: json["dislikeCount"] as int? ??0,
+      hitCount: json["hitCount"] as int? ??0,
+      likeCount: json["likeCount"] as int? ??0, 
+      replyCount: json["replyCount"] as int? ??0,
+      time: json["time"] as String? ??"", 
+      title: json["title"] as String? ??"未知内容",
+      userName: json["userName"] as String? ??"匿名用户",
+      mediaContent: json["mediaContent"] as Map<String,dynamic>? ?? {}
+      );
+  }
+}
 
 class Discover extends StatefulWidget {
   const Discover({super.key});
@@ -44,13 +86,21 @@ class _DiscoverState extends State<Discover> {
     try {
       String response=await RequestSender.getNewTopic(currentPage, pageSize);
       if(!response.startsWith("404:")){
-        final List<dynamic> _data = json.decode(response);
-        final List<String> userIds = _data.map((e) => e['userId'].toString()).toSet().toList();
+        List list = json.decode(response) as List;
+        final data=list.map((e)=>Post.fromJson(e as Map<String,dynamic>)).toList();
+        final List<int> userIds = data.map((e) => e.userId).toSet().toList();
         final portraitMap=Deserializer.parseUserPortrait(await RequestSender().getUserPortrait(userIds));
-        final data=_data.map((e){
-          e['portraitUrl'] = portraitMap[e['userId'].toString()]??"";
-          return e;
-        });
+        for (var e in data) {
+          SimpleUserInfo? user;
+          try {
+            user = portraitMap.firstWhere((u) => u.userId == e.userId);
+          } catch (_) {
+            user = null;
+          }
+          if (user != null) {
+            e.portraitUrl = user.portraitUrl;
+          }
+        }
       setState(() {
         posts.addAll(data);
         isLoading = false;
@@ -98,9 +148,9 @@ class _DiscoverState extends State<Discover> {
   
 
   // 构建帖子列表项
-Widget _buildPostItem(dynamic post) {
+Widget _buildPostItem(Post post) {
   final ColorScheme colorScheme=ColorScheme.fromSeed(seedColor: ColorTokens.primaryLight);
-  final mediaMap=post["mediaContent"] as Map<String,dynamic>? ??{};//取出第一层
+  final mediaMap=post.mediaContent;//取出第一层
   final thumbNails=(mediaMap["thumbnail"] as List<dynamic>?)?.cast<String>()??<String>[];
   return Card( 
     elevation: 0,
@@ -112,7 +162,7 @@ Widget _buildPostItem(dynamic post) {
       onTap: ()=>{Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Topic(topicId: post['id']),
+              builder: (context) => Topic(topicId: post.id),
             ),
           )},
       child: Padding(
@@ -125,20 +175,14 @@ Widget _buildPostItem(dynamic post) {
               children: [
                 // 作者头像
                 ClipOval(
-                          child: post["userName"]==null?Text("匿",textAlign: TextAlign.center,style: const TextStyle(
-                                  fontSize: 14,
-                                  color: ColorTokens.softPink,
-                                  fontWeight: FontWeight.bold,
-                                ),):Image.network(
-                            post['portraitUrl'],
+                          child: Image.network(
+                            post.portraitUrl,
                             width: 36,
                             height: 36,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Text(
-                                (post['userName'] != null && post['userName'] != '')
-                                    ? post['userName'][0]
-                                    : '匿',
+                                post.userName[0],
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 14,
@@ -157,7 +201,7 @@ Widget _buildPostItem(dynamic post) {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        post['userName'] ?? '@ 匿名',
+                        post.userName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -166,9 +210,7 @@ Widget _buildPostItem(dynamic post) {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        DateFormat('yyyy-MM-dd HH:mm').format(post['time'] is DateTime
-                            ? post['createdAt']
-                            : DateTime.parse(post['time'])),
+                        post.time,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -184,7 +226,7 @@ Widget _buildPostItem(dynamic post) {
             const SizedBox(height: 12),
             // 帖子标题
             Text(
-                post['title'],
+                post.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -216,24 +258,16 @@ Widget _buildPostItem(dynamic post) {
                     .toList(),
               ),
             // 回复数和浏览量
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FluentIconbutton(icon: FluentIcons.share_16_regular,iconColor: colorScheme.primary,),
-                Row(
-                  spacing: 4,
-                  children: [
-                    FluentIconbutton(icon: FluentIcons.chat_16_regular,iconColor: colorScheme.primary),
-                    Text(post["replyCount"].toString(),style: TextStyle(color: ColorTokens.softPurple),)
-                  ],
-                ),
-                Row(
-                  children: [
-                    FluentIconbutton(icon: FluentIcons.chevron_up_16_regular,iconColor: colorScheme.primary),
-                    Text(post["likeCount"].toString(),style: TextStyle(color: ColorTokens.softPurple),)
-                  ],
-                )           
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6,vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  buildStatItem(FluentIcons.fire_16_regular, post.hitCount),
+                  buildStatItem(FluentIcons.chat_16_regular, post.replyCount),
+                  buildStatItem(FluentIcons.chevron_up_16_regular, post.likeCount)     
+                ],
+              ),
             ),
           ],
         ),
@@ -242,7 +276,14 @@ Widget _buildPostItem(dynamic post) {
   );
 }
 
-
+  Widget buildStatItem(IconData icon,int count){
+    return Row(
+      spacing: 4,
+      children: [
+      Icon(icon,color: ColorTokens.softPurple,size: 12),
+      Text(count.toString(),style: TextStyle(color: ColorTokens.softPurple))
+    ]);
+  }
   Widget _buildTipIndicator() {
     return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
@@ -258,6 +299,7 @@ Widget _buildPostItem(dynamic post) {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
+        automaticallyImplyLeading: false,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
         ),       

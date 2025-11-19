@@ -42,7 +42,7 @@ class _TopicState extends State<Topic> {
   int totalPages=1;
   final int pageSize = 10;
   bool hasMore = true;
-  Client client = Client();
+  Connector client = Connector();
   @override
   void initState() {
     super.initState();
@@ -93,14 +93,14 @@ class _TopicState extends State<Topic> {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> newReplies0 = json.decode(response.body);
+        List<dynamic> newReplies = json.decode(response.body);
         //考虑e["userId"]可能为null的情况
-        final List<String> userIds = newReplies0.map((e) => e['userId'].toString()).toSet().toList();
+        final List<int> userIds = newReplies.map((e) => e['userId'] as int).toSet().toList();
         final portraitMap=Deserializer.parseUserPortrait(await RequestSender().getUserPortrait(userIds));
-        final List<dynamic> newReplies = newReplies0.map((e) {
-          e['portraitUrl'] = portraitMap[e['userId'].toString()] ?? '';
-          return e;
-        }).toList();
+        for (var e in newReplies) {
+          var user=portraitMap.firstWhere((u)=>u.userId==e["userId"] as int);
+          e["portraitUrl"]=user.portraitUrl;  
+        }
         setState(() {
           replies.addAll(newReplies);
           isLoading = false;
@@ -168,7 +168,7 @@ class _TopicState extends State<Topic> {
               const SizedBox(width: 6),
               Text(
                 DateFormat('yyyy-MM-dd HH:mm').format(
-                  DateTime.parse(topicDetail!['time'] ?? DateTime.now().toString()),
+                  DateTime.parse(topicDetail!['time'] ?? DateTime.now().toString()).add(const Duration(hours: 8)),
                 ),
                 style: TextStyle(color: Colors.grey.shade600),
               ),

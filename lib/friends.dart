@@ -5,6 +5,7 @@ import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/focus.dart';
 import 'package:cc98_ocean/kernel.dart';
 import 'package:cc98_ocean/main.dart';
 import 'package:cc98_ocean/profile.dart';

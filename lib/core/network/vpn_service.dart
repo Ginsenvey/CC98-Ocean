@@ -1,179 +1,270 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:convert/convert.dart';
+import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
+import 'package:pointycastle/export.dart' as pc;
 
-import 'package:pointycastle/api.dart';
-import 'package:pointycastle/asymmetric/api.dart';
-import 'package:pointycastle/asymmetric/pkcs1.dart';
-import 'package:pointycastle/asymmetric/rsa.dart';
-import 'package:xml/xml.dart' as xml;
-
-
+/// VPN服务类，用于连接浙江大学WebVPN
 class VpnService {
-  static const String _authUrl =
-      'https://webvpn.zju.edu.cn/por/login_auth.csp?apiversion=1';
-  static const String _pswUrl =
-      'https://webvpn.zju.edu.cn/por/login_psw.csp?anti_replay=1&encrypt=1&apiversion=1';
-
-  final client;
-  final jar = <String, String>{};
+  final http.Client client;
+  VpnService() : client = http.Client();
+  static const String loginAuthUrl = "https://webvpn.zju.edu.cn/login";
+  static const String loginPswUrl = "https://webvpn.zju.edu.cn/do-login";
+  final Map<String, String> _cookies = {};
   bool logined = false;
-  static const baseHeaders = {
-  HttpHeaders.refererHeader: 'https://webvpn.zju.edu.cn/portal/',
-  HttpHeaders.connectionHeader: 'keep-alive',
-  HttpHeaders.userAgentHeader:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
-};
+  bool isVpnEnabled = false;
+  bool autoDirect = true;
+  bool _disposed = false;
 
-  ///当完成登录后，将从xml中读取TWFID值并保存到Jar.这个值可能是null.
-  Cookie? get twfId =>
-      jar.entries
-          .where((e) => e.key.contains('TWFID'))
-          .map((e) => Cookie.fromSetCookieValue(e.value))
-          .firstOrNull;
-  VpnService():client=http.Client();
+  String? get ticket => _cookies['wengine_vpn_ticketwebvpn_zju_edu_cn'];
+  String? get route => _cookies['route'];
 
-  ///标准转写函数
-  static String convertUrl(String origin){
-    Uri uri=Uri.parse(origin);
-    String host=uri.host.replaceAll(".", "-");
-    int port=uri.port;
-    String pathAndQuery=uri.hasQuery?"${uri.path}?${uri.query}":uri.path;
-    if(uri.scheme.toLowerCase()=="https")host+="-s";
-    if(port>0&&!(port==80&&uri.scheme=="http")&&!(port==443&&uri.scheme=="https"))host+="-$port-p";
-    return "http://$host.webvpn.zju.edu.cn:8001$pathAndQuery";
-  }
-
-  ///检测是否处于内网,返回1时为内网，返回0为外网，其余返回均认为无网络
-  static Future<String> checkNetwork() async {
-    try {
-      final response = await http.get(Uri.parse('https://mirrors.zju.edu.cn/api/is_campus_network')).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final data = response.body;
-        if (data=="1"||data=='2') 
-        {
-          return '1';
-        } 
-        else if(data=="0")
-        {
-          return '0';
-        }
-        else
-        {
-          return '2:非法返回';
-        }
-      } 
-      else 
-      {
-        return '3:无互联网连接';
-      }
-    } 
-    catch (e) 
-    {
-      return '4: $e';
+  void dispose() {
+    if (!_disposed) {
+      client.close();
+      _disposed = true;
     }
   }
 
-  /// 登录主流程，返回 "1" 表示成功，其余为错误信息
-  Future<String> login(String username, String password) async {
-   
-    final authResp = await client.get(Uri.parse(_authUrl),headers: baseHeaders);
-    if (authResp.statusCode != HttpStatus.ok) {
-      throw Exception('auth request failed: ${authResp.statusCode}');
-    }
-    final authXml = authResp.body;
-    final auth = parseAuthXml(authXml);
-
-    //获取Set-Cookie
-    final setCookie = authResp.headers['set-cookie'];
-    String? cookieHeader;
-    if (setCookie != null) {
-      cookieHeader = setCookie.split(';').first;
-    }
-
-    // 2. 加密密码
-    final plain = '${password}_${auth.csrf}';
-    final encrypted = encrypt(plain, auth.key, auth.exp);
-
-    // 3. 提交登录
-    final form = {
-      'mitm_result': '',
-      'svpn_req_randcode': auth.csrf,
-      'svpn_name': username,
-      'svpn_password': encrypted,
-      'svpn_rand_code': '',
+  /// 合并默认请求头与自定义请求头
+  Map<String, String> _mergeHeaders(Map<String, String>? additional) {
+    final headers = <String, String>{
+      'Referer': 'https://webvpn.zju.edu.cn/',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
     };
-    print(form);
-    final loginResp = await client.post(
-      Uri.parse(_pswUrl),
-      body: form,
-      headers:{
-        ...baseHeaders,
-        if (cookieHeader != null) HttpHeaders.cookieHeader: cookieHeader,
-        HttpHeaders.contentTypeHeader:'application/x-www-form-urlencoded',
+    if (additional != null) {
+      headers.addAll(additional);
+    }
+    return headers;
+  }
+
+  /// 从响应头更新Cookie
+  void _updateCookies(http.Response response) {
+    final setCookieHeader = response.headers['set-cookie'];
+    if (setCookieHeader != null) {
+      // 处理多个Set-Cookie头
+      final cookies = setCookieHeader.split(',');
+      for (var cookieStr in cookies) {
+        final parts = cookieStr.split(';');
+        for (var part in parts) {
+          final equalsIndex = part.indexOf('=');
+          if (equalsIndex > 0) {
+            final name = part.substring(0, equalsIndex).trim();
+            final value = part.substring(equalsIndex + 1).trim();
+            _cookies[name] = value;
+            break;
+          }
+        }
       }
-    );
-    final loginXml = loginResp.body;
-    print(loginXml);
-    // 4. 解析结果
-    final result = _verifyLoginResult(loginXml);
-    if (result == '1') logined = true;
-    return result;
-  }
-
-  ({String csrf, String key, String exp}) parseAuthXml(String xmlStr) {
-    final doc = xml.XmlDocument.parse(xmlStr);
-    String xpath(String tag) => doc.findAllElements(tag).first.innerText;
-    return (
-      csrf: xpath('CSRF_RAND_CODE'),
-      key: xpath('RSA_ENCRYPT_KEY'),
-      exp: xpath('RSA_ENCRYPT_EXP'),
-    );
-  }
-
-  /// RSA/ECB/PKCS1 加密，返回小写十六进制
-  String encrypt(String plain, String modulusHex, String exponentDec) {
-    final mod = BigInt.parse(modulusHex, radix: 16);
-    final exp = BigInt.parse(exponentDec,radix: 10);
-    final engine = PKCS1Encoding(RSAEngine())
-      ..init(
-        true,
-        PublicKeyParameter<RSAPublicKey>(
-          RSAPublicKey(mod,exp),
-        ),
-      );
-
-    final input = Uint8List.fromList(utf8.encode(plain));
-    final output = engine.process(input);
-    return _bytesToHex(output);
-  }
-
-  String _verifyLoginResult(String xmlStr) {
-    final doc = xml.XmlDocument.parse(xmlStr);
-    final result = doc.findAllElements('Result').first.innerText;
-    final msg = doc.findAllElements('Message').firstOrNull?.innerText ?? 'Unknown error';
-    if (result == '1') {
-      logined = true;
-      return '1';
-    } else {
-      logined = false;
-      return '400:$msg';
     }
   }
 
-  void close() => client.close();
+  /// 获取当前Cookie字符串
+  String _getCookieHeader() {
+    if (_cookies.isEmpty) return '';
+    return _cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+  }
+
+  /// 登录到WebVPN
+  Future<String> loginAsync(String username, String password, {CancellationToken? cts}) async {
+    try {
+      cts?.throwIfCancelled();
+      
+      final response = await client.get(
+        Uri.parse(loginAuthUrl),
+        headers: _mergeHeaders({}),
+      );
+      
+      if (response.statusCode == 200) {
+        _updateCookies(response);
+        
+        final html = response.body;
+        final param = getRandCode(html);
+        final encryptedPassword = buildPassword("wrdvpnisawesome!", password);
+        final formData = {
+          '_csrf': param.csrf,
+          'auth_type': param.authType,
+          'sms_code': '',
+          'captcha': '',
+          'needCaptcha': 'false',
+          'captcha_id': param.captcha,
+          'username': username,
+          'password': encryptedPassword,
+        };
+        
+        cts?.throwIfCancelled();
+        
+        final loginResponse = await client.post(
+          Uri.parse(loginPswUrl),
+          headers: _mergeHeaders({
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': _getCookieHeader(),
+          }),
+          body: formData,
+        );
+        
+        if (loginResponse.statusCode != 200) {
+          return "404:登录请求失败";
+        }
+        
+        _updateCookies(loginResponse);
+        
+        final text = loginResponse.body;
+        if (parseLoginResult(text)) {
+          logined = true;
+          return "1";
+        } else {
+          return "0";
+        }
+      } else {
+        return "404:获取CSRF失败";
+      }
+    } catch (e) {
+      if (e is CancelledException) {
+        rethrow;
+      }
+      return "404:${e.toString()}";
+    }
+  }
+
+  /// 转换普通URL为VPN URL
+  static String convertUrl(String origin) {
+  final uri = Uri.parse(origin);
+  final scheme = uri.scheme;
+  final port = uri.port;
+  final host = uri.host;
+
+  final isSpecialPort = port > 0 &&
+      !(scheme == 'http' && port == 80) &&
+      !(scheme == 'https' && port == 443);
+  final property = isSpecialPort ? '$scheme-$port' : scheme;
+
+  // 1. 正确的路径+查询串
+  final pathAndQuery = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
+
+  // 3. 拼 VPN 前缀
+  final vpnPrefix = Uri(
+    scheme: 'https',
+    host: 'webvpn.zju.edu.cn',
+    pathSegments: [
+      Uri.encodeComponent(property),
+      Uri.encodeComponent(buildPassword('wrdvpnisthebest!', host)),
+    ],
+  ).toString();
+
+  // 4. 最后拼上原始路径和查询
+  return vpnPrefix + (pathAndQuery.startsWith('/') ? pathAndQuery : '/$pathAndQuery');
 }
 
+  /// 检查网络状态
+  
 
+  /// 解析登录结果
+  static bool parseLoginResult(String json) {
+    if (json.isEmpty) return false;
+    try {
+      final dic = jsonDecode(json);
+      if (dic is Map<String, dynamic>) {
+        final success = dic['success'];
+        if (success is bool) {
+          return success;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
 
+  /// 从HTML中提取随机码
+  static ({String csrf, String captcha, String authType}) getRandCode(String html) {
+    final doc = html_parser.parse(html);
+    final csrfNode = doc.querySelector("input[type='hidden'][name='_csrf']");
+    final captchaNode = doc.querySelector("input[type='hidden'][name='captcha_id']");
+    final authTypeNode = doc.querySelector("input[type='hidden'][name='auth_type']");
+    
+    final csrf = csrfNode?.attributes['value'] ?? '';
+    final captcha = captchaNode?.attributes['value'] ?? '';
+    final authType = authTypeNode?.attributes['value'] ?? '';
+    
+    return (csrf: csrf, captcha: captcha, authType: authType);
+  }
 
-String _bytesToHex(Uint8List bytes) =>
-    bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  /// 构建加密密码
+  static String buildPassword(String prefix, String plainText) {
+    final sliceLength = 2 * plainText.length;
+    final prefixHex = stringToAscll(prefix);
+    final fullCore = encryptStringToHex(plainText, prefix, prefix);
+    final core = fullCore.length > sliceLength ? fullCore.substring(0, sliceLength) : fullCore;
+    return "$prefixHex$core";
+  }
 
+  /// AES CFB加密
+  static String encryptStringToHex(String plainText, String key, String iv) {
+    final ivBytes = Uint8List.fromList(iv.padRight(16, ' ').substring(0, 16).codeUnits);
+    final keyBytes = Uint8List.fromList(key.padRight(16, ' ').substring(0, 16).codeUnits);
+    
+    final paddedPlainText = padWithZeros(plainText);
+    
+    // 使用AES CFB模式加密
+    final cipher = pc.BlockCipher("AES/CFB-128");
+    final params = pc.ParametersWithIV(pc.KeyParameter(keyBytes), ivBytes);
+    cipher.init(true, params);
+    
+    final encrypted = cipher.process(paddedPlainText);
+    return hex.encode(encrypted).toLowerCase();
+  }
 
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
+  /// 用0填充到16字节倍数
+  static Uint8List padWithZeros(String plainText) {
+    final raw = Uint8List.fromList(utf8.encode(plainText));
+    final len = raw.length;
+    var pad = 16 - (len % 16);
+    if (pad == 16) pad = 0;
+    
+    final padded = Uint8List(len + pad);
+    padded.setAll(0, raw);
+    // 剩余部分默认为0
+    return padded;
+  }
+
+  /// 字符串转ASCII Hex
+  static String stringToAscll(String origin) {
+    final asciiBytes = ascii.encode(origin);
+    final sb = StringBuffer();
+    for (final b in asciiBytes) {
+      sb.write(b.toRadixString(16).padLeft(2, '0'));
+    }
+    return sb.toString();
+  }
+}
+
+/// 取消令牌类
+class CancellationToken {
+  final Completer<void> _completer = Completer<void>();
+  
+  bool get isCancelled => _completer.isCompleted;
+  
+  void cancel() {
+    if (!_completer.isCompleted) {
+      _completer.complete();
+    }
+  }
+  
+  Future<void> get whenCancelled => _completer.future;
+  
+  void throwIfCancelled() {
+    if (isCancelled) {
+      throw CancelledException();
+    }
+  }
+}
+
+/// 取消异常
+class CancelledException implements Exception {
+  @override
+  String toString() => "Operation was cancelled";
 }
 

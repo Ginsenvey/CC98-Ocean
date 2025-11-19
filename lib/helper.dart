@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:html2md/html2md.dart' as html2md;
+import 'package:intl/intl.dart';
 class BBCodeConverter {
   static final RegExp emojiRegex = RegExp(r'\[([a-zA-Z]+)(\d+)\]');
   
@@ -139,4 +140,8 @@ class MdConverter{
     return markdown.trimRight(); // 去掉 html2md 可能多出的尾换行
   });
   }
+}
+
+extension TimeFormat on String{
+  String get toUtc8=>DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(this).add(const Duration(hours: 8)));
 }

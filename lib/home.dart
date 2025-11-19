@@ -79,7 +79,7 @@ switch (selectedIndex) {
               children: [
                 if(!kIsWeb)if(Platform.isWindows||Platform.isLinux||Platform.isMacOS)
                   buildSideBar(),
-                
+                if(kIsWeb)buildSideBar(),
                 Expanded(child: page),
               ],
             ),
@@ -103,7 +103,6 @@ switch (selectedIndex) {
     );
   }
   Widget buildSideBar(){
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
     return SafeArea(
       child: SidebarX(controller: _controller,items: [
                           SidebarXItem(icon: FluentIcons.design_ideas_16_regular,label: '首页',),

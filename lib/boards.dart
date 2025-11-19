@@ -119,7 +119,7 @@ class _BoardsState extends State<Boards>
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        
+        automaticallyImplyLeading: false,
         titleSpacing: 8,
         actions: [
           FluentIconbutton(icon: FluentIcons.arrow_sync_16_regular,iconColor: ColorTokens.softPurple,),
@@ -127,11 +127,11 @@ class _BoardsState extends State<Boards>
         title: const Text("全部版面",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
 
       ),
-      body: _buildContent(),
+      body: buildLayout(),
     );
   }
 
-  Widget _buildContent() {
+  Widget buildLayout() {
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(),

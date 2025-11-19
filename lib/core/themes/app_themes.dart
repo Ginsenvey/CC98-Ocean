@@ -12,6 +12,7 @@ class AppThemes {
     ),
     // 如果想让旧组件自动取新色，可再包一层
     appBarTheme: const AppBarTheme(elevation: 0),
+    fontFamily: 'Arial'
   );
 
   static final ThemeData dark = ThemeData(

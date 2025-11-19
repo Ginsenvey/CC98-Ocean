@@ -1,39 +1,94 @@
 import 'dart:convert';
 import 'package:cc98_ocean/core/network/vpn_service.dart';
+import 'package:cc98_ocean/focus.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-class Client {
-  static final Client _instance = Client._internal();
-  factory Client() => _instance;
+import 'dart:developer' as dev;
+///API连接器
+class Connector {
+  static final Connector _instance = Connector._internal();
+  factory Connector() => _instance;
   bool isVpnEnabled = false;
-  final VpnService vpnService=VpnService();
-  static const FlutterSecureStorage _storage = FlutterSecureStorage();
-  static String? _accessToken;
-  
-  Client._internal() {
+  VpnService vpn=VpnService();
+  static const FlutterSecureStorage vault = FlutterSecureStorage();
+  String? _accessToken;
+  Map<String,String> vpnHeaders={};
+  Connector._internal() {
     _loadToken();
   }
-   
-  // 加载本地存储的 Token
   Future<void> _loadToken() async {
-    _accessToken = await _storage.read(key: 'access');
+    _accessToken = await vault.read(key: 'access');
   }
-  
-  // 保存 Token
   Future<void> saveToken(String name,String token) async {
     _accessToken = token;
-    await _storage.write(key: name, value: token);
+    await vault.write(key: name, value: token);
   }
-  
-  // 清除 Token
   Future<void> clearToken() async {
     _accessToken = null;
-    await _storage.delete(key: 'access');
-    await _storage.delete(key: 'refresh');
+    await vault.delete(key: 'access');
+    await vault.delete(key: 'refresh');
   }
-  
+  String getCookieHeader(Map<String,String> cookies) {
+    if (cookies.isEmpty) return '';
+    return cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+  }
+  ///注入VPN凭据.必须先确保isVpnUsable==true
+  Future<void> injectToken()async{
+    String ticket=await getToken("ticket");
+    String route=await getToken("route");
+    final cookies=<String,String>{
+      "ticket":ticket,
+      "route":route,
+    };
+    vpnHeaders["Cookie"]=getCookieHeader(cookies);
+  }
+  void saveAllVpnToken(String id,String pass){
+    Connector().saveToken("vpnUserName",id);
+    Connector().saveToken("vpnPassword", pass);
+    Connector().saveToken("ticket", vpn.ticket??"");
+    Connector().saveToken("route", vpn.route??"");
+  }
+  Future<bool> isVpnUsable() async{
+    String id=await getToken("vpnUserName");
+    String pass=await getToken("vpnPassword");
+    String ticket=await getToken("ticket");
+    String route=await getToken("route");
+    return id!="0"&&pass!="0"&&ticket!="0"&&route!="0";
+  }
+  Future<String> getToken(String key) async{
+    final value = await vault.read(key: key);
+    if(value!=null&&value.isNotEmpty){
+      return value;
+    }
+    else{
+      return "0";
+    }
+  }
+  Future<String> checkNetwork(bool useVpn) async {
+    const mirrorUrl = "https://mirrors.zju.edu.cn/api/is_campus_network";
+    final targetUri = useVpn ?VpnService.convertUrl(mirrorUrl) : mirrorUrl;
+    
+    try {
+      //由于发送get经过基本请求方法，必须确保目标url不被转写两次
+      final response = await get(targetUri);
+      if (response.statusCode == 200) {
+        final resText = response.body.trim();
+        if (resText == "0") {
+          return "0";
+        } else if (resText == "1" || resText == "2") {
+          return "1";
+        } else {
+          return "404:非法返回";
+        }
+      } else {
+        return "404:请求失败";
+      }
+    } catch (e) {
+      return "404:${e.toString()}";
+    }
+  }
   // 封装 GET 请求
   Future<http.Response> get(String url, {Map<String, String>? headers}) async {
     return await _request('GET', url, headers: headers);
@@ -56,15 +111,13 @@ class Client {
   Future<bool> refreshToken() async {
     try {
       const refreshUrl = "https://openid.cc98.org/connect/token";
-      final refreshToken = await _storage.read(key: 'refresh');
-      
+      final refreshToken = await vault.read(key: 'refresh');
       if (refreshToken == null) {
         throw Exception('No refresh token available');
       }
       
-      final response = await http.post(
-        Uri.parse(refreshUrl),
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      final response = await post(
+        refreshUrl,
         body: {
           "grant_type": "refresh_token",
           "refresh_token": refreshToken,
@@ -110,28 +163,26 @@ class Client {
       await _loadToken();
     }
     String url=isVpnEnabled?VpnService.convertUrl(originUrl):originUrl;
-    // 获取 Content-Type
-    final contentType = headers?['Content-Type'] ?? 'application/json';
+    // 如果设置了内容类型，则使用此类型
+    final contentType = headers?['Content-Type'] ?? '';
     
     // 处理请求体
     Object? finalBody;
+    //如果未设置类型，判断内容是否为映射表，并进行转换
     if (contentType == 'application/x-www-form-urlencoded' && body is Map<String, String>) {
       finalBody = _encodeFormData(body);// 编码为表单数据
     } else if (body != null) {
       finalBody = body; // 其他类型直接使用
     }
     
-    // 设置默认请求头
+    //设置内容和鉴权请求头
     final defaultHeaders = {
-      if (contentType != 'multipart/form-data') 'Content-Type': contentType,// 避免 multipart/form-data 重复设置
+      if (contentType != 'multipart/form-data'&&contentType!="") 'Content-Type': contentType,// 避免 multipart/form-data 重复设置
       if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
     };
     
-    // 合并自定义请求头
+    //合并自定义请求头
     final mergedHeaders = {...defaultHeaders, ...?headers};
-    
-    
-    
     try {
       http.Response response;
       switch (method.toUpperCase()) {
@@ -196,33 +247,89 @@ class AuthService
 {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
-  
-  final FlutterSecureStorage vault=const FlutterSecureStorage() ;
   static SharedPreferences? set;
   AuthService._internal();
   
-  // 初始化服务
+  //初始化配置
   Future<void> init() async {
     set = await SharedPreferences.getInstance();
   }
+  Future<int> getAppState()async{
+    final networkStatus=await initializeNetwork();
+    final loginStatus=await getLoginStatus();
+    if(networkStatus==0){
+      return loginStatus?1:0;
+    }
+    else if(networkStatus==1){
+      Connector().isVpnEnabled=true;
+      return loginStatus?1:0;
+    }
+    else if(networkStatus==2){
+      return 2;//跳转VPN设置
+    }
+    else{
+      return 0;//跳转登录
+    }
+  }
   Future<bool> getLoginStatus() async {
-    if(!await vault.containsKey(key:"access")){
-      return false;
-    }
-    if(!await vault.containsKey(key:"refresh")){
-      return false;
-    }
+    if(await Connector().getToken("access")=="0"||await Connector().getToken("refresh")=="0")return false;
     return set?.getBool('isActive') ?? false; 
   }
-  Future<String?> getToken(String key) async {
-    return await vault.read(key: key);
+  Future<int> initializeNetwork()async{
+    //检查网络
+    String status=await Connector().checkNetwork(false);
+    if(status=="1"){
+      //无需VPN的情况
+      return 0;
+    }
+    //无网络
+    else if(status=="0"){
+      //检查是否存在VPN鉴权令牌
+      if(await Connector().isVpnUsable()){
+        //注入
+        Connector().injectToken();
+        String newStatus=await Connector().checkNetwork(true);
+        if(newStatus=="1"){
+          return 1;
+        }
+        else if(newStatus=="0"){
+          //注入令牌无网络,可能是令牌过期，需要重登VPN
+          //尝试处理
+          String id=await Connector().getToken("vpnUserName");
+            String pass=await Connector().getToken("vpnPassword");
+            final res=await Connector().vpn.loginAsync(id,pass);
+            if(res=="1"){
+              //重连成功
+              Connector().saveToken("ticket", Connector().vpn.ticket??"");
+              Connector().saveToken("route", Connector().vpn.route??"");
+              await Connector().injectToken();
+              return 1;
+            }
+            else{
+              //VPN密码可能被修改，需要重新配置VPN
+              return 2;
+            }
+        }
+        else{
+          //基本请求出错，可能是无互联网连接
+          return 3;
+        }
+      }
+      //没有存储VPN凭据，需要配置VPN
+      else{
+        return 2;
+      }
+    }
+    else{
+      return 3;
+    }
   }
   Future<bool> setLoginStatus(bool newValue) async {
     return await set?.setBool('isActive', newValue) ?? false;
   }
   static Future<String> loginAsync(String id,String password)async{
     const String loginUrl = "https://openid.cc98.org/connect/token";
-    final response = await Client().post(
+    final response = await Connector().post(
       loginUrl,
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
       body: {
@@ -241,8 +348,8 @@ class AuthService
       final accessToken = jsonResponse['access_token'] as String?;
       final refreshToken = jsonResponse['refresh_token'] as String?;
       if (accessToken != null && refreshToken != null) {
-        await Client().saveToken("access", accessToken);
-        await Client().saveToken("refresh", refreshToken);
+        await Connector().saveToken("access", accessToken);
+        await Connector().saveToken("refresh", refreshToken);
         //自动保存凭据
         return "1";
       } else {
@@ -259,7 +366,7 @@ class AuthService
 class RequestSender{
   static Future<String> getNewTopic(int currentPage,int pageSize) async {
     final String url="https://api.cc98.org/topic/new?from=${currentPage * pageSize}&size=$pageSize";
-    final response = await Client().get(url);
+    final response = await Connector().get(url);
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -268,17 +375,17 @@ class RequestSender{
   }
   Future<String> getHotTopic() async {
     const String url="https://api.cc98.org/config/index";
-    final response = await Client().get(url);
+    final response = await Connector().get(url);
     if (response.statusCode == 200) {
       return response.body;
     } else {
       return "404:请求失败";   
     }
   }
-  Future<String> getUserPortrait(List<dynamic> userIds) async {
+  Future<String> getUserPortrait(List<int> userIds) async {
     final String ids = userIds.map((e) =>"id=$e" ).join('&');
     final String url="https://api.cc98.org/user/basic?$ids";
-    final response = await Client().get(url);
+    final response = await Connector().get(url);
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -288,7 +395,7 @@ class RequestSender{
   static Future<String> getUserInfo(List<dynamic> userIds) async {
     final String ids = userIds.map((e) =>"id=$e" ).join('&');
     final String url="https://api.cc98.org/user?$ids";
-    final response = await Client().get(url);
+    final response = await Connector().get(url);
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -299,7 +406,7 @@ class RequestSender{
   {
     String url="https://api.cc98.org/post/$replyId/like";
     //此处使用了utf编码，否则发送的是"1".
-    final res=await Client().put(url,body:utf8.encode(mode),headers: {"Content-Type": "application/json;charset=utf-8"});
+    final res=await Connector().put(url,body:utf8.encode(mode),headers: {"Content-Type": "application/json;charset=utf-8"});
     if(res.statusCode==200)
     {
       return true;
@@ -309,7 +416,7 @@ class RequestSender{
   static Future<Map<String,int>> getLikeStatus(int replyId)async
   {
     String url="https://api.cc98.org/post/$replyId/like";
-    final res=await Client().get(url);
+    final res=await Connector().get(url);
     if(res.statusCode==200)
     {
       final jsonResponse = json.decode(res.body);
@@ -328,7 +435,7 @@ class RequestSender{
     };
   }
   static Future<String> simpleRequest(String url) async{
-    final response = await Client().get(url);
+    final response = await Connector().get(url);
     if (response.statusCode == 200) {
       return response.body;
     } else {
@@ -365,7 +472,7 @@ class RequestSender{
               };
             }
             //此处注意如何发送StringContent,需要jsonEncode,否则会不报错静默失效
-            final res=await Client().post(url, body:jsonEncode(reply), headers: {"Content-Type": "application/json"});
+            final res=await Connector().post(url, body:jsonEncode(reply), headers: {"Content-Type": "application/json"});
             if(res.statusCode==200)
             {
                 return "1";
@@ -383,27 +490,10 @@ class RequestSender{
         }
 }
 class Deserializer{
-  static Map<String,String> parseUserPortrait(String res){
-    final List<Map<String, dynamic>> maps = jsArrayToList(res);
-    final Map<String, String> result = {};
-    //遍历maps,将id和portrait存入result
-    for (var map in maps) {
-      result[map['id'].toString()] = map['portraitUrl'] as String;
-    }
-    return result;
+  static List<SimpleUserInfo> parseUserPortrait(String res){
+    final list = json.decode(res) as List;
+    final data=list.map((e)=>SimpleUserInfo.fromJson(e as Map<String,dynamic>)).toList();
+    return data;
   }
-  static List<Map<String, dynamic>> jsArrayToList(String jsArrayStr) {
-  // 1. 去掉最外层引号（若存在）
-  var s = jsArrayStr.trim();
-  if ((s.startsWith('"') && s.endsWith('"')) ||
-      (s.startsWith("'") && s.endsWith("'"))) {
-    s = s.substring(1, s.length - 1);
-  }
-  // 2. 反转义
-  s = s.replaceAll(r'\"', '"').replaceAll(r"\\'", "'");
-  // 3. JSON 解码
-  final list = jsonDecode(s) as List;
-  return list.cast<Map<String, dynamic>>();
-}
-  
+ 
 }

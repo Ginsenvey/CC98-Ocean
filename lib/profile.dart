@@ -56,7 +56,7 @@ class _ProfileState extends State<Profile> {
   bool isExpanded=true;
   bool hasMore = true; 
   String errorMessage = '';
-  Client client = Client();
+  Connector client = Connector();
   int currentPage = 0;
   final int pageSize = 10;
   

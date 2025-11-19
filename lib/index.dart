@@ -116,62 +116,21 @@ class _IndexState extends State<Index> {
       }
   }
 
-  // 处理收藏操作
-  
-
-  // 构建帖子列表项
-Widget _buildPostItem(Post post,{Key? key}) {
-  return Card(
-    key: key,
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(4),
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Topic(topicId: post.id),
-            ),
-          );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Text(
-            post.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 14,
-            ),
-          ),
-      ),
-    ),
-  );
-}
-
- 
-  
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
+        automaticallyImplyLeading: false,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(0),
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
         title: const Text("今日话题",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
-
       ),
       body:LayoutBuilder(
         builder: (_,box){
@@ -263,4 +222,37 @@ Widget _buildPostItem(Post post,{Key? key}) {
       itemBuilder: (context, index) => _buildPostItem(posts[index],key: ValueKey(posts[index].id)),
     );
   }
+    // 构建帖子列表项
+Widget _buildPostItem(Post post,{Key? key}) {
+  return Card(
+    key: key,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Topic(topicId: post.id),
+            ),
+          );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Text(
+            post.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+      ),
+    ),
+  );
+}
 }

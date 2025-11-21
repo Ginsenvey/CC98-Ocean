@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -83,6 +84,7 @@ class VpnService {
         final html = response.body;
         final param = getRandCode(html);
         final encryptedPassword = buildPassword("wrdvpnisawesome!", password);
+        dev.log("使用此密钥登录$encryptedPassword");
         final formData = {
           '_csrf': param.csrf,
           'auth_type': param.authType,
@@ -207,14 +209,18 @@ class VpnService {
     final keyBytes = Uint8List.fromList(key.padRight(16, ' ').substring(0, 16).codeUnits);
     
     final paddedPlainText = padWithZeros(plainText);
-    
     // 使用AES CFB模式加密
     final cipher = pc.BlockCipher("AES/CFB-128");
     final params = pc.ParametersWithIV(pc.KeyParameter(keyBytes), ivBytes);
     cipher.init(true, params);
     
-    final encrypted = cipher.process(paddedPlainText);
-    return hex.encode(encrypted).toLowerCase();
+    final out = Uint8List(paddedPlainText.length);
+    var offset = 0;
+    while (offset < paddedPlainText.length)
+    {
+      offset += cipher.processBlock(paddedPlainText, offset, out, offset);
+    }
+    return hex.encode(out).toLowerCase();
   }
 
   /// 用0填充到16字节倍数

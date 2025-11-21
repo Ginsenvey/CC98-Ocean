@@ -29,10 +29,15 @@ class VideoFrameState extends State<VideoFrame> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: SizedBox(
-        width:0.95* MediaQuery.of(context).size.width,
-        height:0.95* MediaQuery.of(context).size.width * 9.0 / 16.0,
-        child: Video(controller: controller),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width:MediaQuery.of(context).size.width,
+          height:MediaQuery.of(context).size.width * 9.0 / 16.0,
+          child: ClipRRect(
+            borderRadius: BorderRadiusGeometry.circular(6),
+            child: Video(controller: controller)),
+        ),
       ),
     );
   }

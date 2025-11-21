@@ -1,15 +1,14 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
+import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/hyperlink_button.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
-import 'package:cc98_ocean/home.dart';
-import 'package:cc98_ocean/index.dart';
-import 'package:cc98_ocean/kernel.dart';
-import 'package:cc98_ocean/mailbox.dart';
-import 'package:cc98_ocean/topic.dart';
-import 'package:cc98_ocean/vpn_setup.dart';
+import 'package:cc98_ocean/pages/home.dart';
+import 'package:cc98_ocean/pages/vpn_setup.dart';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
@@ -22,8 +21,8 @@ import 'package:url_launcher/url_launcher.dart';
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
   await AuthService().init();
-  bool loginStatus=await AuthService().getLoginStatus();
-  runApp(CC98(appState:loginStatus?1:0));
+  int appState=await AuthService().getAppState();
+  runApp(CC98(appState:appState));
 }
 
 class CC98 extends StatelessWidget {
@@ -38,7 +37,7 @@ class CC98 extends StatelessWidget {
       child: MaterialApp(
         title: 'CC98 Ocean',
         theme: AppThemes.light,
-        home:appState==1?Home():Login(),                                               
+        home:appState==1?Home():(appState==2?VpnSetup():Login()),                                               
       ),
     );
   }
@@ -88,21 +87,24 @@ class Login extends StatefulWidget {
   @override
   State<Login> createState() => _LoginState();
 }
-
 class _LoginState extends State<Login> {
+  @override
+  void initState() {
+    super.initState();
+    checkState();
+  }
+
+  Future<void> checkState()async{
+    final AppState=await AuthService().getAppState();
+    dev.log(AppState.toString(),name: "应用状态");
+    if(AppState==1){
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>Home()));
+    }
+  }
   Future<void> login() async {
-    //以下判断用于快速调试。
-    final r=await AuthService().setLoginStatus(true);
-        if(r&&await AuthService().getLoginStatus()){
-          InfoFlower.showContent(context, child: Text("登录成功"));
-          Navigator.push(context, MaterialPageRoute(builder: (context)=>Home()));
-          return;
-        }
     if (!_formKey.currentState!.validate()) return;
-    
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
     
     try 
@@ -121,7 +123,6 @@ class _LoginState extends State<Login> {
       }
       else{
         String errorMessage=res;
-        setState(() => _errorMessage = errorMessage);
       }
     } 
     catch (e) 
@@ -359,19 +360,28 @@ class _LoginState extends State<Login> {
       child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                HyperlinkButton(icon:FluentIcons.document_16_regular,text: "文档",onPressed: ()async{
-                  InfoFlower.showContent(context, child: Text(await AuthService().getLoginStatus()?"已登录":"未登录"));
+                HyperlinkButton(icon:FluentIcons.toolbox_16_regular,text: "文档",onPressed: () async {
+                  final bool loggedIn = await AuthService().getLoginStatus();
+                  showDialog(
+                    context: context,
+                    builder: (context) => FluentDialog.text(
+                      title: loggedIn ? "已登录" : "未登录",
+                      content: Text("调试"),
+                      cancelText: "取消",
+                      confirmText: "确认",
+                    ),
+                  );
                 },),
                 SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
                 HyperlinkButton(icon:FluentIcons.home_16_regular,text: "主页",onPressed: () => launch("https://www.cc98.org/logon")),
                 SizedBox(height: 20,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
                 HyperlinkButton(icon:FluentIcons.shape_intersect_16_regular,text: "网络",onPressed: ()async{
                   final appState=await AuthService().initializeNetwork();
-                  setState(() {
-                    _errorMessage=appState.toString();
-                  });
                   if(appState==2||appState==3){
-                    Navigator.push(context, MaterialPageRoute(builder:(context)=>VpnSetup()));
+                    dev.log("未处于内网环境中，且vpn不可用",name: "网络检测");
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=>VpnSetup()));
+                  }else{
+                    dev.log("处于内网环境中",name: "网络检测");
                   }
                 },),
               ],

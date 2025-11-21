@@ -35,6 +35,7 @@ dependencies:
   flutter_riverpod: ^3.0.0
   pointycastle: ^4.0.0
   xml: ^6.6.1
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,22 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/emoji/
+    - assets/images/emoji/ac-white/
+    - assets/images/emoji/CC98/
+    - assets/images/emoji/em/
+    - assets/images/emoji/ms/
+    - assets/images/emoji/tb/
+
+flutter_native_splash:
+  color: "#000000"                    # 背景色
+  image: "assets/images/cc98.png"   # 居中图标
+  android: true
+  ios: true
+  android_12:                         # Android 12+ 专用，图标会被裁成圆形
+    image: "assets/images/cc98.png"
+    icon_background_color: "#000000"
+
 
 
   

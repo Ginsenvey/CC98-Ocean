@@ -21,13 +21,13 @@ class BBCodeConverter {
       final prefix = match.group(1)!; // 获取前缀部分（如 "tb"）
       final number = match.group(2)!; // 获取数字部分（如 "02"）
       if(prefix=="ac"){
-        return '[emoji]$baseImagePath$prefix-white/$prefix$number.png[/emoji]';
+        return '[img]$baseImagePath$prefix-white/$prefix$number.png[/img]';
       }
       else if(prefix=="tb"||prefix=="em"||prefix=="ms"){
-        return '[emoji]$baseImagePath$prefix/$prefix$number.png[/emoji]';
+        return '[img]$baseImagePath$prefix/$prefix$number.png[/img]';
       }
       else if(prefix=="cc"){
-        return '[emoji]assets/images/emoji/CC98/CC$number.png[/emoji]';
+        return '[img]$baseImagePath/CC$number.png[/img]';
       }
       return '$baseImagePath$prefix/$prefix$number.png';
     });

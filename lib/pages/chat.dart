@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
+import 'package:cc98_ocean/pages/profile.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -43,6 +45,7 @@ class _ChatState extends State<Chat> {
   bool hasMore=true;
   bool isLoading=false;
   bool hasError=false;
+  String errorMessage="";
   void _sendMessage() {
 }
   @override
@@ -65,12 +68,13 @@ class _ChatState extends State<Chat> {
         setState(() {
           hasMore=data.length==pageSize;
           for (var e in data) {
-          messages.insert(0, e);
+          messages.insert(0, e);//通过插入来实现倒置
         }});
       }
     }
     catch(e){
       setState(() {
+        errorMessage=e.toString();
         hasError=true;
       });
     }
@@ -103,24 +107,31 @@ class _ChatState extends State<Chat> {
             messages.clear();
             getChatHistory();
           }),
+          FluentIconbutton(icon: FluentIcons.person_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>Profile(userId: widget.senderId, canEscape: true)));
+          },)
         ],
         title: Text(widget.senderName,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
 
       ),
-      body: buildLayout(),
-      bottomNavigationBar: SafeArea(child: buildInputField())
+      body:isLoading?Center(child: CircularProgressIndicator()):buildLayout(),
     );
   }
 
   Widget buildLayout(){
-    return Column(
-        children: [
-          isLoading?CircularProgressIndicator():Expanded(
-            child: buildChatList()
-          ),
-          
-        ],
-      );
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&messages.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getChatHistory);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getChatHistory);
+    return SafeArea(
+      child: Column(
+          children: [
+            Expanded(
+              child: buildChatList()
+            ),
+            buildInputField()
+          ],
+        ),
+    );
   }
 
   Widget buildChatList(){

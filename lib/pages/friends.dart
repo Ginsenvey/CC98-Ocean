@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
@@ -97,16 +99,18 @@ class _FriendsState extends State<Friends>{
         else{
           hasMore=true;
         }
-        isLoading=false;
         hasError=false;
       });
     }
     }
     catch(e){
       setState(() {
-        isLoading = false;
         hasError = true;
         errorMessage = '加载失败: ${e.toString()}';
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
       });
     }
   }
@@ -157,6 +161,9 @@ class _FriendsState extends State<Friends>{
   }
 
   Widget buildLayout(){
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&friends.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无好友，点击刷新",onTapped: getFriends);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getFriends);
     return Column(
       children: [
         Padding(
@@ -202,7 +209,7 @@ class _FriendsState extends State<Friends>{
               child: ClickArea(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>Profile(userId: info.id,canEscape: true,))),
                 child: ClipOval(
-                  child: Image.network(info.portraitUrl,height: 36,width: 36,errorBuilder: (context, error, stackTrace) => Text("")), 
+                  child: PortraitOval(url: info.portraitUrl), 
                 ),
               ),
             ),
@@ -217,7 +224,7 @@ class _FriendsState extends State<Friends>{
                               color: ColorTokens.primaryLight, 
                             ),),
                   SizedBox(height: 2),
-                  Text(info.introduction,style: const TextStyle(
+                  Text(info.introduction==""?"该用户还没有设置简介~":info.introduction,style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 12,
                             ),)

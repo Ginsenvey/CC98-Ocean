@@ -1,3 +1,4 @@
+import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:flutter/material.dart';
 
 class PortraitOval extends StatelessWidget {
@@ -10,7 +11,7 @@ class PortraitOval extends StatelessWidget {
               height: 36,
               width: 36,
               child: ClipOval(
-                child: Image.network(url,height: 36,width: 36,errorBuilder: (context, error, stackTrace) => buildDefaultAvatar(url)), 
+                child: Image(image: SmartNetworkImage(url),height: 36,width: 36,errorBuilder: (context, error, stackTrace) => buildDefaultAvatar(url)), 
               ),
             );
   }

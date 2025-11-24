@@ -4,6 +4,7 @@ import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/pager.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
@@ -79,7 +80,8 @@ class _TopicState extends State<Topic> {
     fontSize: 15,
     color: Colors.black,
     height: 1.5,
-    )).addTag(AudioTag()).addTag(VideoTag()).addTag(StrikeTag()).addTag(EmojiTag());
+    )).addTag(AudioTag()).addTag(VideoTag()).addTag(StrikeTag()).replaceTag(SmartImgTag());
+    
   // 帖子详情
   Map<String, dynamic>? topicDetail;
   // 回复列表
@@ -160,17 +162,22 @@ class _TopicState extends State<Topic> {
         }
         setState(() {
           replies.addAll(data);
-          isLoading = false;
           hasMore = data.length == pageSize;
         });
       } else {
-        throw Exception('获取回复失败: ${response.statusCode}');
+        setState(() {
+          errorMessage='获取回复失败: ${response.statusCode}';
+          hasError=true;
+        });
       }
     } catch (e) {
       setState(() {
         hasError = true;
         errorMessage = '加载回复失败: ${e.toString()}';
-        isLoading = false;
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
       });
     }
   }
@@ -186,8 +193,66 @@ class _TopicState extends State<Topic> {
     
     await getReply();
   }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 48,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),       
+        actionsPadding: EdgeInsets.only(right: 8),
+        titleSpacing: 8,
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+          child: FluentIconbutton(icon: FluentIcons.chevron_left_16_regular,onPressed:()=>{Navigator.maybePop(context)},),
+        ),
+        actions: [FluentIconbutton(icon: FluentIcons.share_16_regular,iconColor: ColorTokens.softPurple,),
+          SizedBox(width: 6,),
+          FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
+        ],
+        title: const Text("帖子详情",style: TextStyle(fontSize: 16,color: ColorTokens.primaryLight),)
 
-  // 构建顶部标题横幅
+      ),
+      body: SafeArea(child: buildLayout()),
+      floatingActionButton: FloatingActionButton(
+        elevation: 3,
+        mini: true,
+        shape: const CircleBorder(),
+        onPressed: () => _showReplyDialog(0,widget.topicId.toString()),//0表示回复楼主
+        child: const Icon(FluentIcons.add_12_regular),
+      ),
+      bottomNavigationBar: isLoading?null:(totalPages<4?null:SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: PageBar(currentPage: currentPage+1, totalPages: totalPages, onJump:(p){
+            setState(() {
+                      currentPage=p-1;
+                      replies.clear();
+                      getReply();
+                    });
+          } ),
+        ),
+      )),
+    );
+  }
+
+  Widget buildLayout() {
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&replies.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getReply);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getReply);
+
+    return Column(
+      children: [
+        // 标题横幅
+        buildTitleBanner(),
+        const SizedBox(height: 8),
+        // 回复列表
+        buildReplyList()
+      ],
+    );
+  }
+
   Widget buildTitleBanner() {
     
     if (topicDetail == null) return Container();
@@ -235,7 +300,23 @@ class _TopicState extends State<Topic> {
       ),
     );
   }
-
+  Widget buildReplyList(){
+    return Expanded(
+          child: RefreshIndicator(
+            onRefresh: getTopicData,
+            child: ListView.separated(
+              separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
+              itemCount:totalPages>3?replies.length :replies.length+1,
+              itemBuilder: (context, index) {
+                if (index == replies.length&&totalPages<4) {
+                  return _buildLoadMoreIndicator();
+                }
+                return buildReplyItem(replies[index]);
+              },
+            ),
+          ),
+        );
+  }
   // 构建回复项
   Widget buildReplyItem(Reply reply) {
     return Card(
@@ -309,7 +390,7 @@ class _TopicState extends State<Topic> {
                 // 点赞数
                 
                 TextButton(
-                  onPressed: () => {},
+                  onPressed: () => _showReplyDialog(0, reply.userName),
                   style: TextButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
@@ -464,97 +545,7 @@ class _TopicState extends State<Topic> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 48,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),       
-        actionsPadding: EdgeInsets.only(right: 8),
-        titleSpacing: 8,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(icon: FluentIcons.chevron_left_16_regular,onPressed:()=>{Navigator.maybePop(context)},),
-        ),
-        actions: [FluentIconbutton(icon: FluentIcons.share_16_regular,iconColor: ColorTokens.softPurple,),
-          SizedBox(width: 6,),
-          FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
-        ],
-        title: const Text("帖子详情",style: TextStyle(fontSize: 16,color: ColorTokens.primaryLight),)
-
-      ),
-      body: SafeArea(child: _buildContent()),
-      floatingActionButton: FloatingActionButton(
-        elevation: 3,
-        mini: true,
-        shape: const CircleBorder(),
-        onPressed: () => _showReplyDialog(0,widget.topicId.toString()),//0表示回复楼主
-        child: const Icon(FluentIcons.add_12_regular),
-      ),
-      bottomNavigationBar: isLoading?null:(totalPages<4?null:SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: PageBar(currentPage: currentPage+1, totalPages: totalPages, onJump:(p){
-            setState(() {
-                      currentPage=p-1;
-                      replies.clear();
-                      getReply();
-                    });
-          } ),
-        ),
-      )),
-    );
-  }
-
-  Widget _buildContent() {
-    if (isLoading && replies.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: getTopicData,
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        // 标题横幅
-        buildTitleBanner(),
-        const SizedBox(height: 8),
-        // 回复列表
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: getTopicData,
-            child: ListView.separated(
-              separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
-              itemCount:totalPages>3?replies.length :replies.length+1,
-              itemBuilder: (context, index) {
-                if (index == replies.length&&totalPages<4) {
-                  return _buildLoadMoreIndicator();
-                }
-                return buildReplyItem(replies[index]);
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  
 }
 
 // 在列表页添加跳转逻辑

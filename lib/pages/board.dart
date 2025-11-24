@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/boards.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
@@ -12,6 +13,7 @@ import 'package:cc98_ocean/pages/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bbcode/flutter_bbcode.dart';
+import 'package:http/http.dart';
 
 class StandardPost {
   final int id;
@@ -169,7 +171,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
         title: Text(isLoading?"加载中···":data.name,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
         //对于late变量，我们确保已经初始化再调用
       ),
-      body:isLoading?const Center(child: CircularProgressIndicator()):buildLayout(),
+      body:buildLayout(),
       bottomNavigationBar: SafeArea( 
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -191,9 +193,12 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
   }
 
   Widget buildLayout(){
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getTopic);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getTopic);
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(
+      child:Column(
         children: [
           if (_showBigPaper || _controller.value > 0)
           SizeTransition(                 // ← 高度 0↔1
@@ -242,20 +247,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
       );
     }
     //占位组件
-    if (!isLoading&&posts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(FluentIcons.music_note_1_24_regular, size: 64, color: ColorTokens.primaryLight),
-            const SizedBox(height: 16),
-            const Text('暂无帖子'),
-            const SizedBox(height: 8),
-            HyperlinkButton(onPressed: () => getTopic(),text: "刷新",icon:FluentIcons.arrow_sync_16_regular ,)
-          ],
-        ),
-      );
-    }
+    
     return Expanded(
       child: ListView.builder(
         itemCount: posts.length,
@@ -309,4 +301,4 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
     ),
   );
   }
-  }
+}

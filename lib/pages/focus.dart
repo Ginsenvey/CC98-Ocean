@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
@@ -95,15 +96,15 @@ class _MomentsState extends State<Moments>{
       setState(() {
         users.addAll(portraitMap);
         posts.addAll(data);
-        isLoading = false;
       });
     }
     }catch(e){
       setState(() {
-        isLoading = false;
         hasError = true;
         errorMessage = '加载失败: ${e.toString()}';
       });
+    }finally{
+      isLoading=false;
     }
     
   }
@@ -132,18 +133,20 @@ class _MomentsState extends State<Moments>{
             icon: FluentIcons.edit_16_regular,
             iconColor: ColorTokens.softPurple,
             onPressed: () {
-              
-              
+ 
             },
             ),
         ],
         title: Text("动态",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.softPurple),)
       ),
-      body: buildLayout(),
+      body:buildLayout(),
     );
   }
 
   Widget buildLayout(){
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getMoments);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getMoments);
     return CustomScrollView(
     controller: controller,
     slivers: [
@@ -171,7 +174,6 @@ class _MomentsState extends State<Moments>{
       ),
       SliverToBoxAdapter(child: buildDivider()),
       //SliverList
-      isLoading?SliverToBoxAdapter(child: const Center(child: CircularProgressIndicator(),),):
       SliverList.separated(
         itemCount:posts.length ,
         itemBuilder: (context, index) => buildPostItem(posts[index]),

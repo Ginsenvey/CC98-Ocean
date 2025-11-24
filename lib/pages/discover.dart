@@ -2,8 +2,11 @@ import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
+import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/focus.dart';
 import 'package:cc98_ocean/pages/topic.dart';
@@ -73,11 +76,11 @@ class _DiscoverState extends State<Discover> {
   @override
   void initState() {
     super.initState();
-    _fetchPosts();
+    fetchPosts();
   }
 
   // 模拟从API获取帖子数据
-  Future<void> _fetchPosts() async {
+  Future<void> fetchPosts() async {
     setState(() {
       posts.clear();
       isLoading = true;
@@ -104,17 +107,18 @@ class _DiscoverState extends State<Discover> {
         }
       setState(() {
         posts.addAll(data);
-        isLoading = false;
+
       });
       }
-      
-
-      
+ 
     } catch (e) {
       setState(() {
-        isLoading = false;
         hasError = true;
         errorMessage = '加载失败: ${e.toString()}';
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
       });
     }
   }
@@ -126,30 +130,83 @@ class _DiscoverState extends State<Discover> {
         currentPage = 0;
         return;
       } // 防止页码小于0
+    currentPage--;
     setState(() {
-      currentPage--;
       posts.clear(); // 清空当前列表
-      isLoading = true;
     });
-    
-    await _fetchPosts();
+    await fetchPosts();
   }
   Future<void> _loadNextPage() async {
     if (isLoading) return;
-    
-    setState(() {
       currentPage++;
-      isLoading = true;
-    });
-    
-    await _fetchPosts();
+      await fetchPosts();
   }
 
-  // 处理收藏操作
   
+ @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 48,
+        automaticallyImplyLeading: false,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),       
+        actionsPadding: EdgeInsets.only(right: 13),
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+          child: FluentIconbutton(
+            icon:FluentIcons.chevron_left_16_regular,
+            onPressed: () => _loadPrePage(context)
+          ),
+        ),
+        actions: [
+          FluentIconbutton(icon: FluentIcons.chevron_right_16_regular,iconColor: ColorTokens.softPurple,onPressed: ()=>_loadNextPage(),),
+        ],
+        title: const Text("发现",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
 
+      ),
+      body: buildLayout(),
+    );
+  } 
+  Widget buildLayout() {
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: fetchPosts);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchPosts);
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.separated(
+            itemCount: posts.length + 1,
+            separatorBuilder: (_, __) {
+              if(!kIsWeb){
+                if(Platform.isWindows||Platform.isLinux||Platform.isMacOS){
+                  return Divider(height: 1,thickness: 1, color: ColorTokens.dividerBlue);
+                }
+                else{
+                  return Divider(height: 1,thickness: 6, color: ColorTokens.dividerBlue);
+                }
+              }
+              else{
+                return Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue);
+              }
+            },
+            itemBuilder: (context, index) {
+              if (index == posts.length) {
+                return _buildTipIndicator();
+              }
+              return _buildPostItem(posts[index]);
+            },
+          ),
+        ),
+      ],
+    );
+
+    
+  }
   // 构建帖子列表项
-Widget _buildPostItem(Post post) {
+  Widget _buildPostItem(Post post) {
   final mediaMap=post.mediaContent;//取出第一层
   final thumbNails=(mediaMap["thumbnail"] as List<dynamic>?)?.cast<String>()??<String>[];
   return Card( 
@@ -170,7 +227,6 @@ Widget _buildPostItem(Post post) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 作者信息和发布时间
             Row(
               children: [
                 // 作者头像
@@ -191,7 +247,7 @@ Widget _buildPostItem(Post post) {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        post.time,
+                        post.time.toUtc8,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -222,17 +278,17 @@ Widget _buildPostItem(Post post) {
                 runSpacing: 8,
                 spacing: 12,
                 children: thumbNails
-                    .map((e) => Card(
+                    .map((url) => Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(side: BorderSide(color: ColorTokens.softPurple),borderRadius:BorderRadiusGeometry.circular(6)),
                       child: ClipRRect(
                         borderRadius: BorderRadiusGeometry.circular(6),
-                        child: Image.network(
-                              e,
+                        child: Image(
+                              image:SmartNetworkImage(url),
                               width: 150,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Text("图片加载失败:$e"),
+                                  Text("图片加载失败:$url"),
                             ),
                       ),
                     ))
@@ -275,88 +331,7 @@ Widget _buildPostItem(Post post) {
   }
 
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 48,
-        automaticallyImplyLeading: false,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),       
-        actionsPadding: EdgeInsets.only(right: 13),
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon:FluentIcons.chevron_left_16_regular,
-            onPressed: () => _loadPrePage(context)
-          ),
-        ),
-        actions: [
-          FluentIconbutton(icon: FluentIcons.chevron_right_16_regular,iconColor: ColorTokens.softPurple,onPressed: ()=>_loadNextPage(),),
-        ],
-        title: const Text("发现",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
+  
 
-      ),
-      body: _buildContent(),
-    );
-  }
-
-  Widget _buildContent() {
-    if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchPosts,
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.separated(
-            itemCount: posts.length + 1,
-            separatorBuilder: (_, __) {
-              if(!kIsWeb){
-                if(Platform.isWindows||Platform.isLinux||Platform.isMacOS){
-                  return Divider(height: 1,thickness: 1, color: ColorTokens.dividerBlue);
-                }
-                else{
-                  return Divider(height: 1,thickness: 6, color: ColorTokens.dividerBlue);
-                }
-              }
-              else{
-                return Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue);
-              }
-            },
-            itemBuilder: (context, index) {
-              if (index == posts.length) {
-                return _buildTipIndicator();
-              }
-              return _buildPostItem(posts[index]);
-            },
-          ),
-        ),
-      ],
-    );
-
-    
-  }
+  
 }

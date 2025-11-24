@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:bbob_dart/bbob_dart.dart' as bbob;
 import 'package:cc98_ocean/controls/audio_player.dart';
+import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:cc98_ocean/controls/video_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bbcode/flutter_bbcode.dart';
@@ -90,7 +91,7 @@ class HeightLimitedImgTag extends AdvancedTag {
     // the BBCode.
     String imageUrl = element.children.first.textContent;
 
-    final image = Image.network(imageUrl,
+    final image = Image(image: SmartNetworkImage(imageUrl),
         height: maxHeight,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stack) => Text("[$tag]"));
@@ -148,32 +149,37 @@ class TopicTag extends StyleTag {
         decoration: TextDecoration.underline, color: Colors.blue);
   }
 }
-class EmojiTag extends AdvancedTag {
-  EmojiTag() : super("emoji");
+
+class SmartImgTag extends AdvancedTag {
+  SmartImgTag() : super("img");
 
   @override
   List<InlineSpan> parse(FlutterRenderer renderer, bbob.Element element) {
     if (element.children.isEmpty) {
       return [TextSpan(text: "[$tag]")];
     }
+
+    // Image URL is the first child / node. If not, that's an issue for the person writing
+    // the BBCode.
     String path = element.children.first.textContent;
-    final image = Image.asset(path,
-        errorBuilder: (context, error, stack) => Image.asset(path.replaceAll("png", "gif"),
-        errorBuilder: (context, error, stack) => Text("[$tag]")));
+
+    final image = path.contains("assets/images")?Image.asset(path,height: 24,fit: BoxFit.contain,
+        errorBuilder: (context, error, stack) => Image.asset(path.replaceAll("png", "gif"),height: 24,fit: BoxFit.contain,
+        errorBuilder: (context, error, stack) => Text("[$tag]"))):Image(image: SmartNetworkImage(path),errorBuilder: (context, error, stack) => Text("[$tag]"));
 
     if (renderer.peekTapAction() != null) {
       return [
         WidgetSpan(
             child: GestureDetector(
           onTap: renderer.peekTapAction(),
-          child: Center(child: image),
+          child: image,
         ))
       ];
     }
 
     return [
       WidgetSpan(
-        child: Center(child: image),
+        child: image,
       )
     ];
   }

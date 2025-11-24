@@ -1,3 +1,5 @@
+import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/link_definition.dart';
 import 'package:cc98_ocean/pages/board.dart';
@@ -19,6 +21,7 @@ import 'package:flutter_bbcode/flutter_bbcode.dart';
 import 'dart:convert';
 
 import 'package:url_launcher/url_launcher.dart';
+import 'package:xml/xml.dart';
 
 class Profile extends StatefulWidget {
   final int userId;
@@ -127,25 +130,28 @@ class _ProfileState extends State<Profile> {
       isLoading = true;
       hasError = false;
     });
-
     try {
-      // 获取用户信息
       String targetUrl =widget.userId==0?'https://api.cc98.org/me':'https://api.cc98.org/user/${widget.userId}';
       final profileResponse =await Connector().get(targetUrl);
 
       if (profileResponse.statusCode == 200) {
         userProfile = json.decode(profileResponse.body);
       } else {
-        throw Exception('获取用户信息失败: ${profileResponse.statusCode}');
+        setState(() {
+          errorMessage='获取用户信息失败: ${profileResponse.statusCode}';
+          hasError=true;
+        });
       }
  
       getTopics();
-      setState(() => isLoading = false);
     } catch (e) {
       setState(() {
         hasError = true;
         errorMessage = e.toString();
-        isLoading = false;
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
       });
     }
   }
@@ -209,27 +215,8 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget buildLayout() {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: fetchUserData,
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchUserData);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -257,7 +244,7 @@ class _ProfileState extends State<Profile> {
               // 头像
               CircleAvatar(
                 radius: 40,
-                backgroundImage: NetworkImage(
+                backgroundImage: SmartNetworkImage(
                   userProfile!['portraitUrl'] ?? '',
                 ),
                 backgroundColor: colorBase.surface,
@@ -323,6 +310,7 @@ class _ProfileState extends State<Profile> {
               buildStatItem('动态', userProfile!['postCount']?.toString() ?? '0'),
               SizedBox(height: 24,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
               ClickArea(child: buildStatItem('粉丝', userProfile!['fanCount']?.toString() ?? '0'),onTap: () {
+                if(widget.canEscape)return;//可以退出说明这不是用户自己的主页，不允许查看好友
                 Navigator.push(context,MaterialPageRoute(builder: (context) => Friends()));}),
               SizedBox(height: 24,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
               buildStatItem('财富', userProfile!['wealth']?.toString() ?? '0'),

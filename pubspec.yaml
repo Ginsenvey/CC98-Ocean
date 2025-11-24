@@ -55,7 +55,7 @@ flutter:
     - assets/images/emoji/tb/
 
 flutter_native_splash:
-  color: "#000000"                    # 背景色
+  color: "#FFFFFF"                    # 背景色
   image: "assets/images/cc98.png"   # 居中图标
   android: true
   ios: true

@@ -43,6 +43,7 @@ class Connector {
       "wengine_vpn_ticketwebvpn_zju_edu_cn":ticket,
       "route":route,
     };
+    dev.log(ticket=="0"?"凭据为空":ticket,name: "凭据注入");
     vpnHeader=getCookieHeader(cookies);
   }
   void saveAllVpnToken(String id,String pass){
@@ -78,13 +79,16 @@ class Connector {
       final response = await http.get(Uri.parse(targetUri),headers: header);
       if (response.statusCode == 200) {
         final resText = response.body.trim();
-        dev.log("检测vpn网络,url为$targetUri");
-        dev.log(resText);
+        dev.log("检测vpn网络,url为$targetUri",name:"网络检测");
+        dev.log(resText[0],name: "网络检测结果");
         if (resText == "0") {
           return "0";
         } else if (resText == "1" || resText == "2") {
           return "1";
-        } else {
+        } else if(resText.contains("WebVPN")){
+          return "0";//cookie过期的情况
+        }
+        else {
           return "404:非法返回";
         }
       } else {
@@ -295,7 +299,7 @@ class AuthService
     else if(status=="0"){
       //检查是否存在VPN鉴权令牌
       if(await Connector().isVpnUsable()){
-        dev.log("vpn可用");
+        dev.log("存在相关凭据,vpn可用");
         //注入
         Connector().injectToken();
         dev.log("已注入凭据，重试${Connector().vpnHeader}");
@@ -306,8 +310,9 @@ class AuthService
           return 1;
         }
         else if(newStatus=="0"){
-          //注入令牌无网络,可能是令牌过期，需要重登VPN
-          //尝试处理
+          //注入令牌无网络,可能是令牌过期，需要重登VPN.
+          //注意通常注入凭据后返回值由VPN托管，0不是镜像站返回的，而是checkNetwork判断得到的。
+          //尝试自动刷新
           dev.log("令牌过期，尝试刷新",name: "网络检测");
           String id=await Connector().getToken("vpnUserName");
             String pass=await Connector().getToken("vpnPassword");
@@ -317,18 +322,18 @@ class AuthService
               Connector().saveToken("route", Connector().vpn.route??"");
               await Connector().injectToken();
               Connector().isVpnEnabled=true;
-              dev.log("令牌刷新成功，重新启用vpn",name: "网络检测");
+              dev.log("令牌刷新成功,重新启用vpn",name: "网络检测");
               return 1;
             }
             else{
               //VPN密码可能被修改，需要重新配置VPN
-              dev.log("vpn凭据错误，或者vpn套餐到期",name: "网络检测");
+              dev.log("vpn凭据错误,或者vpn套餐到期",name: "网络检测");
               return 2;
             }
         }
         else{
-          //基本请求出错，可能是无互联网连接
-          dev.log("无互联网连接",name: "网络检测");
+          //注入VPN凭据后仍然不处于内网中
+          dev.log("使用vpn检查网络失败,未成功连接内网",name: "网络检测");
           return 3;
         }
       }
@@ -339,7 +344,7 @@ class AuthService
       }
     }
     else{
-      dev.log("无互联网连接",name: "网络检测");
+      dev.log("不使用vpn检查网络失败,无互联网连接",name: "网络检测");
       return 3;
     }
   }

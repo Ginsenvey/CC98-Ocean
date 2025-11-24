@@ -31,7 +31,7 @@ class AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   }
 
   Future<void> _setupAudioPlayer() async {
-  // 1. 保存订阅对象
+  //保存订阅对象
   _stateSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
     if (mounted) setState(() => _playerState = state);
   });

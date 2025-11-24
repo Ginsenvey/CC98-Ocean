@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/topic.dart';
@@ -85,7 +86,7 @@ class _IndexState extends State<Index> {
   @override
   void initState() {
     super.initState();
-    _fetchPosts();
+    fetchPosts();
     AuthService().init();
     setUp();
   }
@@ -93,7 +94,7 @@ class _IndexState extends State<Index> {
     isLoggedIn = await service.getLoginStatus();
     setState(() {});
   }
-  Future<void> _fetchPosts() async {
+  Future<void> fetchPosts() async {
     setState(() {
       isLoading = true;
       hasError = false;
@@ -131,30 +132,32 @@ class _IndexState extends State<Index> {
         ],
         title: const Text("今日话题",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
       ),
-      body:LayoutBuilder(
+      body:buildLayout()
+    );
+    
+  }
+  Widget buildLayout(){
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&sections.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: fetchPosts);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchPosts);
+    return LayoutBuilder(
         builder: (_,box){
           final width=box.maxWidth;
           final crossCount = width < 600 ? 1 : width ~/ 300;
-          return isLoading?
-          const Center(child: CircularProgressIndicator(),
-                  ):
-                  MasonryGridView.count(
+          return MasonryGridView.count(
           crossAxisCount: crossCount,
           mainAxisSpacing: 15,
           crossAxisSpacing: 15,
           itemCount: sections.length,
           itemBuilder: (context, index) {
-            return _buildSection(sections[index]);
+            return buildSection(sections[index]);
           },
                   );
         }
         
-      )
-    );
-    
+      );
   }
-  Widget _buildSection(Section section ) {
-  
+  Widget buildSection(Section section ) {
   return Column(
     mainAxisSize: MainAxisSize.max,
     children: [
@@ -169,51 +172,12 @@ class _IndexState extends State<Index> {
       ),
       // 帖子列表
       Divider(thickness: 2,color: ColorTokens.primaryLight,indent: 6,endIndent: 6,),
-      _buildContent(section.posts),
+      buildPostList(section.posts),
       const SizedBox(height: 6,)
     ],
   );
 }
-  Widget _buildContent(List<Post> posts) {
-    //加载中组件
-    
-    //错误组件
-    if (hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchPosts,
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-    //占位组件
-    if (posts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.forum_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('暂无帖子'),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _fetchPosts,
-              child: const Text('刷新'),
-            ),
-          ],
-        ),
-      );
-    }
-
+  Widget buildPostList(List<Post> posts) {
     return ListView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(), 

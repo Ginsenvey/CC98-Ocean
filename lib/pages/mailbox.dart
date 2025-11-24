@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/chat.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
@@ -36,6 +38,9 @@ class Mailbox extends StatefulWidget {
 
 class _MailboxState extends State<Mailbox> {
   final List<Contact> contacts=[];
+  bool isLoading=false;
+  bool hasError=false;
+  String errorMessage="";
   @override
   void initState() {
     super.initState();
@@ -43,7 +48,12 @@ class _MailboxState extends State<Mailbox> {
   }
   Future<void> getRecentContact()async{
     String url="https://api.cc98.org/message/recent-contact-users?from=0&size=10";
-    final res=await RequestSender.simpleRequest(url);
+    try{
+      setState(() {
+        isLoading=true;
+        hasError=false;
+      });
+      final res=await RequestSender.simpleRequest(url);
     if(!res.startsWith("404:")){
       contacts.clear();
       final list=json.decode(res) as List;
@@ -57,6 +67,16 @@ class _MailboxState extends State<Mailbox> {
       }
       setState(() {
         contacts.addAll(data);
+      });
+    }
+    }catch(e){
+      setState(() {
+        hasError=true;
+        errorMessage=e.toString();
+      });
+    }finally{
+      setState(() {
+        isLoading=false;
       });
     }
   }
@@ -74,7 +94,7 @@ class _MailboxState extends State<Mailbox> {
           padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
           child: FluentIconbutton(
             icon:FluentIcons.chevron_left_16_regular,
-            onPressed: () => {}
+            onPressed: () =>Navigator.maybePop(context)
           ),
         ),
         
@@ -85,6 +105,9 @@ class _MailboxState extends State<Mailbox> {
     );
   }
   Widget buildLayout(){
+    if(isLoading)return Center(child: CircularProgressIndicator());
+    if(!isLoading&&contacts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getRecentContact);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getRecentContact);
     return Column(
       children: [
         Padding(
@@ -109,9 +132,7 @@ class _MailboxState extends State<Mailbox> {
             SizedBox(
               height: 36,
               width: 36,
-              child: ClipOval(
-                child: Image.network(contact.portraitUrl,height: 36,width: 36,errorBuilder: (context, error, stackTrace) => buildDefaultAvatar(contact.portraitUrl)), 
-              ),
+              child: PortraitOval(url:contact.portraitUrl),
             ),
             SizedBox(width: 12),
             Expanded(

@@ -238,8 +238,6 @@ class _TopicState extends State<Topic> {
   }
 
   Widget buildLayout() {
-    if(isLoading)return Center(child: CircularProgressIndicator());
-    if(!isLoading&&replies.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getReply);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getReply);
 
     return Column(

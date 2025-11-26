@@ -4,6 +4,8 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
+
         {
             "name": "cc98_ocean",
             "request": "launch",
@@ -20,6 +22,14 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "Windows ARM64",
+            "cwd": ".",
+            "request": "launch",
+            "type": "dart",
+            "args": ["--target-platform", "windows-arm64",
+                "--cmake-args", "-A", "ARM64"]
         }
     ]
 }

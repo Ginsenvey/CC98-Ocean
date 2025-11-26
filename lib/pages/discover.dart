@@ -73,16 +73,18 @@ class _DiscoverState extends State<Discover> {
   int currentPage = 0;
   int pageSize = 20;
   String errorMessage = '';
+  final ScrollController controller = ScrollController();
   @override
   void initState() {
     super.initState();
+    controller.addListener(onScroll);
     fetchPosts();
   }
 
   // 模拟从API获取帖子数据
   Future<void> fetchPosts() async {
     setState(() {
-      posts.clear();
+      //posts.clear();
       isLoading = true;
       hasError = false;
     });
@@ -107,7 +109,6 @@ class _DiscoverState extends State<Discover> {
         }
       setState(() {
         posts.addAll(data);
-
       });
       }
  
@@ -154,31 +155,31 @@ class _DiscoverState extends State<Discover> {
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon:FluentIcons.chevron_left_16_regular,
-            onPressed: () => _loadPrePage(context)
-          ),
-        ),
-        actions: [
-          FluentIconbutton(icon: FluentIcons.chevron_right_16_regular,iconColor: ColorTokens.softPurple,onPressed: ()=>_loadNextPage(),),
-        ],
-        title: const Text("发现",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
+        title: buildStatusTitle()
 
       ),
       body: buildLayout(),
     );
-  } 
+  }
+  Widget buildStatusTitle(){
+    return Row(
+      spacing: 12,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text("发现",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight)),
+        if(isLoading)SizedBox(width: 16,height: 16,child: CircularProgressIndicator(strokeWidth: 3))
+      ],
+    );
+  }
   Widget buildLayout() {
-    if(isLoading)return Center(child: CircularProgressIndicator());
     if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: fetchPosts);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchPosts);
     return Column(
       children: [
         Expanded(
           child: ListView.separated(
-            itemCount: posts.length + 1,
+            controller: controller,
+            itemCount: posts.length,
             separatorBuilder: (_, __) {
               if(!kIsWeb){
                 if(Platform.isWindows||Platform.isLinux||Platform.isMacOS){
@@ -193,10 +194,7 @@ class _DiscoverState extends State<Discover> {
               }
             },
             itemBuilder: (context, index) {
-              if (index == posts.length) {
-                return _buildTipIndicator();
-              }
-              return _buildPostItem(posts[index]);
+              return buildPostItem(posts[index]);
             },
           ),
         ),
@@ -206,7 +204,7 @@ class _DiscoverState extends State<Discover> {
     
   }
   // 构建帖子列表项
-  Widget _buildPostItem(Post post) {
+  Widget buildPostItem(Post post) {
   final mediaMap=post.mediaContent;//取出第一层
   final thumbNails=(mediaMap["thumbnail"] as List<dynamic>?)?.cast<String>()??<String>[];
   return Card( 
@@ -321,7 +319,7 @@ class _DiscoverState extends State<Discover> {
       Text(count.toString(),style: TextStyle(color: ColorTokens.softPurple))
     ]);
   }
-  Widget _buildTipIndicator() {
+  Widget buildTipIndicator() {
     return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(
@@ -331,7 +329,15 @@ class _DiscoverState extends State<Discover> {
   }
 
 
-  
-
-  
+  void onScroll() {
+    if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError) {
+        currentPage++;
+        fetchPosts();  
+    }
+  }
+  @override
+  void dispose() {
+  controller.dispose();
+  super.dispose();
+}
 }

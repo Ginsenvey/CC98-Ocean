@@ -75,16 +75,8 @@ class Topic extends StatefulWidget {
 }
 
 class _TopicState extends State<Topic> {
-  final extendStyle=defaultBBStylesheet(textStyle: TextStyle(
-    wordSpacing: 1.2,
-    fontSize: 15,
-    color: Colors.black,
-    height: 1.5,
-    )).addTag(AudioTag()).addTag(VideoTag()).addTag(StrikeTag()).replaceTag(SmartImgTag());
-    
-  // 帖子详情
+  late BBStylesheet extendStyle;
   Map<String, dynamic>? topicDetail;
-  // 回复列表
   List<Reply> replies = [];
   bool isLoading = true;
   bool hasError = false;
@@ -97,9 +89,16 @@ class _TopicState extends State<Topic> {
   @override
   void initState() {
     super.initState();
+    initializeStyleSheet();
     getTopicData();
   }
-
+  void initializeStyleSheet(){
+    extendStyle=defaultBBStylesheet(textStyle: TextStyle(
+    wordSpacing: 1.2,
+    fontSize: 15,
+    height: 1.5,
+    )).addTag(AudioTag()).addTag(VideoTag()).addTag(StrikeTag()).replaceTag(SmartImgTag());
+  }
   // 获取帖子详情
   Future<void> getTopicData() async {
     setState(() {

@@ -157,7 +157,7 @@ switch (selectedIndex) {
                           color: Colors.grey.withOpacity(0.12),
                         ),
                         decoration: BoxDecoration(
-                          color: AppThemes.light.colorScheme.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: Colors.grey.withOpacity(0.3),

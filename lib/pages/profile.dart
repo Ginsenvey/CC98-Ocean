@@ -349,7 +349,7 @@ class _ProfileState extends State<Profile> {
     final signature = userProfile!['signatureCode'] ?? '';
     return Card(
       elevation: 0,
-      color: ColorTokens.dividerBlue,
+      color: Theme.of(context).brightness==Brightness.light? ColorTokens.dividerBlue:ColorTokens.dartGrey,
       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
       child:Padding(padding: EdgeInsetsGeometry.all(8),
       child: Row(

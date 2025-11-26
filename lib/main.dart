@@ -52,7 +52,7 @@ class CC98 extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'CC98 Ocean',
-        theme: AppThemes.light,
+        theme: AppThemes.dark,
         home:buildAppBody(appState),                                               
       ),
     );
@@ -67,9 +67,8 @@ Widget buildAppBody(int appState){
   return  Scaffold(
         body: Column(
           children: [
-            Container(
+            SizedBox(
               height: 48.0, 
-              color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Row(

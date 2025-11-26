@@ -93,12 +93,7 @@ class _FriendsState extends State<Friends>{
       final data=userInfoList.map((e)=>UserInfo.fromJson(e as Map<String,dynamic>)).toList();
       setState(() {
         friends.addAll(data);
-        if(data.length<pageSize){
-          hasMore=false;
-        }
-        else{
-          hasMore=true;
-        }
+        hasMore=data.length==pageSize;
         hasError=false;
       });
     }
@@ -161,7 +156,6 @@ class _FriendsState extends State<Friends>{
   }
 
   Widget buildLayout(){
-    if(isLoading)return Center(child: CircularProgressIndicator());
     if(!isLoading&&friends.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无好友，点击刷新",onTapped: getFriends);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getFriends);
     return Column(
@@ -185,9 +179,14 @@ class _FriendsState extends State<Friends>{
         Expanded(child: 
           ListView.separated(
             controller: controller,
-            itemCount: friends.length,
+            itemCount: hasMore?friends.length+1: friends.length,
             separatorBuilder: (context, index) => Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue),
-            itemBuilder: (_,i)=>buildFriend(friends[i])
+            itemBuilder: (_,i){
+              if(i==friends.length){
+                return buildLoadMoreIndicator();
+              }
+              return buildFriend(friends[i]);
+            }
             )
         )
       ],
@@ -239,7 +238,14 @@ class _FriendsState extends State<Friends>{
       ),
     );
   }
-
+  Widget buildLoadMoreIndicator(){
+    return isLoading? Center(child:CircularProgressIndicator()):const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text('下拉加载更多', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+  }
   void onScroll() {
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
         currentPage++;

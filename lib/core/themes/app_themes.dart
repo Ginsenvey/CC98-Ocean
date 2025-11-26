@@ -10,6 +10,7 @@ class AppThemes {
       primary: ColorTokens.primaryLight,
       surface: ColorTokens.surfaceLight,
     ),
+    brightness: Brightness.light,
     // 如果想让旧组件自动取新色，可再包一层
     appBarTheme: const AppBarTheme(elevation: 0),
     fontFamily: 'Arial'
@@ -20,6 +21,8 @@ class AppThemes {
     colorScheme: ColorScheme.dark(
       primary: ColorTokens.primaryDark,
       surface: ColorTokens.surfaceDark,
+
     ),
+    brightness: Brightness.dark
   );
 }

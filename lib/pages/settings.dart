@@ -8,6 +8,7 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Settings extends StatefulWidget {
@@ -19,12 +20,26 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   // 状态变量
-  ThemeMode _themeMode = ThemeMode.system;
+  int themeMode = 0;
   Color _themeColor = Colors.blue;
   bool _compactMode = false;
-  bool _showAvatars = true;
   bool _useFooters = true;
-
+  List<String> themeList = ['跟随系统', '浅色模式', '深色模式'];
+  late SharedPreferences set;
+  @override
+  void initState()async{
+    super.initState();
+    set=await SharedPreferences.getInstance();
+  }
+  void loadSettings(){
+    int? theme=set.getInt("theme");
+    if(theme!=null){
+      themeMode=theme;
+    }
+    else{
+      set.setInt("theme", 0);
+    }
+  }
   // 退出登录确认
   void _confirmLogout() {
     showDialog(
@@ -48,7 +63,7 @@ class _SettingsState extends State<Settings> {
 
   // 打开GitHub仓库
   Future<void> _openGithubRepo() async {
-    const url = 'https://github.com/yourusername/yourapp';
+    const url = 'https://github.com/Ginsenvey/CC98-Ocean';
     if (!await launchUrl(Uri.parse(url))) {
       throw Exception('无法打开: $url');
     }
@@ -112,12 +127,28 @@ class _SettingsState extends State<Settings> {
       ),
     );
   }
+  String get platform => switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'Android',
+      TargetPlatform.iOS     => 'IOS',
+      TargetPlatform.windows => 'Windows',
+      TargetPlatform.macOS  => 'macOS',
+      TargetPlatform.linux   => 'Linux',
+      TargetPlatform.fuchsia => 'Fuchsia',
+    };
+  
+  String get arch {
+  final p = Platform.version; // 例：2.19.0-... (x64) linux-x64
+  if (p.contains('x64'))  return 'x64';
+  if (p.contains('arm64')) return 'arm64';
+  if (p.contains('arm'))   return 'arm';
+  if (p.contains('ia32'))  return 'ia32';
+  return 'unknown';
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<String> list = ['跟随系统', '浅色模式', '深色模式'];
-    final itemList= list.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList();
-    String? selected="跟随系统";
+    final itemList= themeList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList();
+    
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
@@ -126,12 +157,6 @@ class _SettingsState extends State<Settings> {
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-          child: FluentIconbutton(
-            icon: FluentIcons.panel_left_expand_16_regular,
-          ),
-        ),
         actions: [
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
@@ -164,7 +189,7 @@ class _SettingsState extends State<Settings> {
             ),
               trailing: DropdownButtonHideUnderline(
   child: DropdownButton2<String>(
-    value: selected,
+    value: themeList[themeMode],
     dropdownStyleData: DropdownStyleData(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
@@ -181,7 +206,7 @@ class _SettingsState extends State<Settings> {
       ),
     ),
     items:itemList,
-    onChanged: (v) => setState(() => selected =itemList.firstWhere((e)=>e.value==v).value),
+    onChanged: (v) => setState(() => themeMode = themeList.indexOf(v??"跟随系统")),
   ),
 )
             ),
@@ -208,8 +233,8 @@ class _SettingsState extends State<Settings> {
             // 浏览偏好
             _buildSectionHeader('浏览偏好'),
             SwitchListTile(
-              title: const Text('紧凑模式'),
-              subtitle: const Text('减少内容间距，显示更多信息'),
+              title: const Text('无图模式'),
+              subtitle: const Text('折叠所有帖子中的图片'),
               shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
@@ -233,7 +258,7 @@ class _SettingsState extends State<Settings> {
             _buildSectionHeader('关于应用'),
             ListTile(
               title: const Text('版本信息'),
-              subtitle: const Text('1.0.0 (build 2025.8)'),
+              subtitle: Text('1.1.0 (build 2025.11) $platform $arch'),
               shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),

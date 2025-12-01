@@ -39,7 +39,7 @@ class _SegmentedControlState extends State<SegmentedControl>
       height: 40,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cc98_ocean/pages/boards.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
-import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/pages/discover.dart';
 import 'package:cc98_ocean/pages/focus.dart';
 import 'package:cc98_ocean/pages/index.dart';
@@ -10,8 +9,6 @@ import 'package:cc98_ocean/pages/settings.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_acrylic/window.dart';
-import 'package:flutter_acrylic/window_effect.dart';
 import 'package:sidebarx/sidebarx.dart';
 class Home extends StatefulWidget {
   @override
@@ -29,9 +26,7 @@ class _HomeState extends State<Home> {
     super.initState();
 
     _controller = SidebarXController(selectedIndex: 0, extended: false);
-    // 1. 监听控制器变化
     _controller.addListener(_onMenuChanged);
-    Window.setEffect(effect: WindowEffect.acrylic,color: Color(0xCC222222));
     
   }
 

@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:cc98_ocean/core/kernel.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

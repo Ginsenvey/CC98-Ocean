@@ -14,7 +14,6 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 
 class Post{
   final int id;

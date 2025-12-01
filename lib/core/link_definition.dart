@@ -1,4 +1,3 @@
-import 'package:url_launcher/url_launcher.dart';
 
 enum ElementType{topic,anchor,user,board,outlink,image,audio,post,file,video}
 class LinkAnalyzer{

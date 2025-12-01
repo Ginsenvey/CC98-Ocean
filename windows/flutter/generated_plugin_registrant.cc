@@ -7,7 +7,6 @@
 #include "generated_plugin_registrant.h"
 
 #include <audioplayers_windows/audioplayers_windows_plugin.h>
-#include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <media_kit_libs_windows_video/media_kit_libs_windows_video_plugin_c_api.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
@@ -19,8 +18,6 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudioplayersWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
-  FlutterAcrylicPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("FlutterAcrylicPlugin"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   MediaKitLibsWindowsVideoPluginCApiRegisterWithRegistrar(

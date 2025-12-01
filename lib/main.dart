@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
-import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/hyperlink_button.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
@@ -11,7 +10,6 @@ import 'package:cc98_ocean/core/themes/app_themes.dart';
 import 'package:cc98_ocean/pages/home.dart';
 import 'package:cc98_ocean/pages/vpn_setup.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_acrylic/window.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
@@ -22,21 +20,25 @@ import 'package:url_launcher/url_launcher.dart';
 
  void main()async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
-  await Window.initialize();
-  // 配置窗口选项
+  if(!kIsWeb){
+    if(Platform.isWindows||Platform.isMacOS||Platform.isLinux){
+    await windowManager.ensureInitialized();
   WindowOptions windowOptions = const WindowOptions(
     titleBarStyle: TitleBarStyle.hidden, // 隐藏默认标题栏
     size: Size(800, 600),
     center: true,
   );
-  MediaKit.ensureInitialized();
-  await AuthService().init();
-  int appState=await AuthService().getAppState();
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
   });
+  }
+  }
+  
+  MediaKit.ensureInitialized();
+  await AuthService().init();
+  int appState=await AuthService().getAppState();
+  
   runApp(CC98(appState:appState));
 }
 
@@ -63,7 +65,7 @@ class AppState extends ChangeNotifier{
 }
 Widget buildAppBody(int appState){
   if(kIsWeb)return appState==1?Home():(appState==2?VpnSetup():Login());
-  if(Platform.isAndroid||Platform.isAndroid)return appState==1?Home():(appState==2?VpnSetup():Login());
+  if(Platform.isAndroid||Platform.isIOS)return appState==1?Home():(appState==2?VpnSetup():Login());
   return  Scaffold(
         body: Column(
           children: [

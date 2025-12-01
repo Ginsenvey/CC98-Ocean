@@ -1,14 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/board.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 ///
 class BoardInfo {

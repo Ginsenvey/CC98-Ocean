@@ -8,7 +8,6 @@ import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
-import 'package:cc98_ocean/pages/focus.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

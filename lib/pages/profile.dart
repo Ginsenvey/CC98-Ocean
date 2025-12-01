@@ -3,12 +3,10 @@ import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/link_definition.dart';
 import 'package:cc98_ocean/pages/board.dart';
-import 'package:cc98_ocean/pages/chat.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/expand_button.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
-import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/pages/friends.dart';
@@ -21,7 +19,6 @@ import 'package:flutter_bbcode/flutter_bbcode.dart';
 import 'dart:convert';
 
 import 'package:url_launcher/url_launcher.dart';
-import 'package:xml/xml.dart';
 
 class Profile extends StatefulWidget {
   final int userId;

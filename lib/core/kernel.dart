@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:cc98_ocean/core/network/vpn_service.dart';
 import 'package:cc98_ocean/pages/focus.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -399,7 +398,7 @@ class RequestSender{
       return "404:请求失败";   
     }
   }
-  Future<String> getHotTopic() async {
+  static Future<String> getHotTopic() async {
     const String url="https://api.cc98.org/config/index";
     final response = await Connector().get(url);
     if (response.statusCode == 200) {

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
@@ -6,12 +5,10 @@ import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:provider/provider.dart';
 class Section{
   final String name;//英文名
   final String description;//汉语名
@@ -82,7 +79,6 @@ class _IndexState extends State<Index> {
   String errorMessage = '';
   AuthService service=AuthService();
   bool isLoggedIn=true;
-  RequestSender r=RequestSender();
   @override
   void initState() {
     super.initState();
@@ -100,7 +96,7 @@ class _IndexState extends State<Index> {
       hasError = false;
     });
     
-    String response=await r.getHotTopic();
+    String response=await RequestSender.getHotTopic();
       if(!response.startsWith("404:")){
         final Map<String, dynamic> index=json.decode(response);//首先解析出字典
       setState(() {

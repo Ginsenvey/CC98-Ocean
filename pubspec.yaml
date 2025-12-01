@@ -36,7 +36,6 @@ dependencies:
   pointycastle: ^4.0.0
   xml: ^6.6.1
   flutter_native_splash: ^2.4.7
-  flutter_acrylic: ^1.1.0
   window_manager: ^0.5.1
 
 dev_dependencies:

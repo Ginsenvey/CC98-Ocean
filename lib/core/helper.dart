@@ -39,7 +39,7 @@ class BBCodeConverter {
     input=convertColorTags(input);
     input=convertAlignTags(input);
     input=convertUnusedTags(input);
-    return input;
+    return input.trim();
   }
   static String convertAlignTags(String input) {
   // 使用正则表达式匹配 [align=value]...[/align] 结构

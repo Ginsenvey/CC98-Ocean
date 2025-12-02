@@ -7,6 +7,7 @@ import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
+import 'package:cc98_ocean/core/themes/theme_controller.dart';
 import 'package:cc98_ocean/pages/home.dart';
 import 'package:cc98_ocean/pages/vpn_setup.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -38,7 +40,6 @@ import 'package:url_launcher/url_launcher.dart';
   MediaKit.ensureInitialized();
   await AuthService().init();
   int appState=await AuthService().getAppState();
-  
   runApp(CC98(appState:appState));
 }
 
@@ -50,19 +51,30 @@ class CC98 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => AppState(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'CC98 Ocean',
-        theme: AppThemes.dark,
-        home:buildAppBody(appState),                                               
+      create: (_) => AppState(), 
+      child: Consumer<AppState>(
+        builder: (context, appStateProvider, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'CC98 Ocean',
+          theme: AppThemes.light.copyWith(
+            colorScheme: AppThemes.light.colorScheme.copyWith(
+              primary: appStateProvider.primaryColor,
+            ),
+          ),
+          darkTheme: AppThemes.dark.copyWith(
+            colorScheme: AppThemes.dark.colorScheme.copyWith(
+              primary: appStateProvider.primaryColor,
+            ),
+          ),
+          themeMode: appStateProvider.themeModeEnum,
+          home: buildAppBody(appState),                                               
+        ),
       ),
     );
   }
 }
 
-class AppState extends ChangeNotifier{
-}
+
 Widget buildAppBody(int appState){
   if(kIsWeb)return appState==1?Home():(appState==2?VpnSetup():Login());
   if(Platform.isAndroid||Platform.isIOS)return appState==1?Home():(appState==2?VpnSetup():Login());

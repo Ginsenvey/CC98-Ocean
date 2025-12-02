@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/profile.dart';
@@ -111,15 +112,20 @@ class _ChatState extends State<Chat> {
             Navigator.push(context, MaterialPageRoute(builder: (context)=>Profile(userId: widget.senderId, canEscape: true)));
           },)
         ],
-        title: Text(widget.senderName,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
+        title: StatusTitle(title: widget.senderName,isLoading: isLoading,onTap:() {
+          setState(() {
+            messages.clear();
+          });
+          currentPage=0;
+          getChatHistory();
+        })
 
       ),
-      body:isLoading?Center(child: CircularProgressIndicator()):buildLayout(),
+      body:buildLayout()
     );
   }
 
   Widget buildLayout(){
-    if(isLoading)return Center(child: CircularProgressIndicator());
     if(!isLoading&&messages.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getChatHistory);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getChatHistory);
     return SafeArea(

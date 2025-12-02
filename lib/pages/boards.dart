@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:cc98_ocean/controls/adaptive_divider.dart';
+import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/board.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
@@ -74,10 +77,10 @@ class _BoardsState extends State<Boards>
   @override
   void initState() {
     super.initState();
-    _fetchSecttions();
+    getSections();
   }
 
-  Future<void> _fetchSecttions()async{
+  Future<void> getSections()async{
     setState(() {
       sections.clear();
       isLoading = true;
@@ -120,38 +123,14 @@ class _BoardsState extends State<Boards>
         actions: [
           FluentIconbutton(icon: FluentIcons.arrow_sync_16_regular,iconColor: ColorTokens.softPurple,),
         ],
-        title: const Text("全部版面",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
-
+        title: StatusTitle(title: "全部版面",isLoading: isLoading,onTap: getSections)
       ),
       body: buildLayout(),
     );
   }
-
-  Widget buildLayout() {
-    if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchSecttions,
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-
+  
+  Widget buildLayout(){
+    if (hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getSections);
     return Column(
       children: [
         // 回复列表
@@ -188,7 +167,7 @@ class _BoardsState extends State<Boards>
             ),
           ),
         ),
-        Divider(thickness: 1,height: 4,color: ColorTokens.dividerBlue,indent: 6,endIndent: 6,),
+        AdaptiveDivider(),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 8),
           child: Wrap(

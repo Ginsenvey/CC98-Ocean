@@ -1,5 +1,5 @@
-
 import 'package:cc98_ocean/controls/clickarea.dart';
+import 'package:cc98_ocean/controls/adaptive_divider.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
@@ -7,6 +7,7 @@ import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/pager.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/focus.dart';
@@ -74,7 +75,7 @@ class Topic extends StatefulWidget {
   State<Topic> createState() => _TopicState();
 }
 
-class _TopicState extends State<Topic> {
+class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
   late BBStylesheet extendStyle;
   Map<String, dynamic>? topicDetail;
   List<Reply> replies = [];
@@ -86,18 +87,36 @@ class _TopicState extends State<Topic> {
   final int pageSize = 10;
   bool hasMore = true;
   Connector client = Connector();
+  final ScrollController controller = ScrollController();
   @override
   void initState() {
     super.initState();
-    initializeStyleSheet();
+    // 不在这里初始化样式
+    controller.addListener(onScroll);
     getTopicData();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 根据当前 Theme 重新生成 stylesheet，保证随主题实时更新
+    initializeStyleSheet();
+  }
+
   void initializeStyleSheet(){
-    extendStyle=defaultBBStylesheet(textStyle: TextStyle(
-    wordSpacing: 1.2,
-    fontSize: 15,
-    height: 1.5,
-    )).addTag(AudioTag()).addTag(VideoTag()).addTag(StrikeTag()).replaceTag(SmartImgTag());
+    // 从当前主题取基础文字样式，保证颜色随主题变化
+    final baseTextStyle = (Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle()).copyWith(
+      wordSpacing: 1.2,
+      fontSize: 15,
+      height: 1.5,
+    );
+
+    extendStyle = defaultBBStylesheet(textStyle: baseTextStyle)
+        .addTag(AudioTag())
+        .addTag(VideoTag())
+        .addTag(StrikeTag())
+        .replaceTag(SmartImgTag());
   }
   // 获取帖子详情
   Future<void> getTopicData() async {
@@ -181,15 +200,12 @@ class _TopicState extends State<Topic> {
     }
   }
 
-  // 加载更多回复
   Future<void> loadMore() async {
     if (!hasMore || isLoading) return;
-    
+    currentPage++;
     setState(() {
-      currentPage++;
       isLoading = true;
     });
-    
     await getReply();
   }
   @override
@@ -210,7 +226,7 @@ class _TopicState extends State<Topic> {
           SizedBox(width: 6,),
           FluentIconbutton(icon: FluentIcons.more_horizontal_16_regular,iconColor: ColorTokens.softPurple,),
         ],
-        title: const Text("帖子详情",style: TextStyle(fontSize: 16,color: ColorTokens.primaryLight),)
+        title: StatusTitle(title: "帖子详情",isLoading: isLoading,onTap:getTopicData)
 
       ),
       body: SafeArea(child: buildLayout()),
@@ -238,13 +254,10 @@ class _TopicState extends State<Topic> {
 
   Widget buildLayout() {
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getReply);
-
     return Column(
       children: [
-        // 标题横幅
         buildTitleBanner(),
         const SizedBox(height: 8),
-        // 回复列表
         buildReplyList()
       ],
     );
@@ -302,7 +315,8 @@ class _TopicState extends State<Topic> {
           child: RefreshIndicator(
             onRefresh: getTopicData,
             child: ListView.separated(
-              separatorBuilder:(_, __)=>Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue) ,
+              separatorBuilder:(_, __)=>Divider(height: 1,thickness: 1,color: Theme.of(context).dividerColor), 
+              controller: controller,
               itemCount:totalPages>3?replies.length :replies.length+1,
               itemBuilder: (context, index) {
                 if (index == replies.length&&totalPages<4) {
@@ -362,7 +376,7 @@ class _TopicState extends State<Topic> {
             ),
             const SizedBox(height: 16),
             reply.contentType==0?BBCodeText(data: BBCodeConverter.convertBBCode(reply.content),stylesheet: extendStyle,errorBuilder: (context,obj,trace){return Text(">>UBB解析错误,请报告开发者<<");} )
-            :MarkdownBlock(data: MdConverter.convertHtml(reply.content)),
+            :MarkdownBlock(data: MdConverter.convertHtml(reply.content).trim()),
             const SizedBox(height: 16),
             // 点赞和点踩数据
             Row(
@@ -515,34 +529,26 @@ class _TopicState extends State<Topic> {
     );
   }
 
-  // 显示举报对话框
-  
-
-  // 构建加载更多指示器
   Widget _buildLoadMoreIndicator() {
-    if (!hasMore) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(
-          child: Text('没有更多回复了', style: TextStyle(color: Colors.grey)),
-        ),
-      );
-    }
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: 16),
       child: Center(
-        child: isLoading
-            ? const CircularProgressIndicator()
-            : TextButton(
-                onPressed: loadMore,
-                child: const Text('加载更多回复'),
-              ),
-      ),
-    );
+        child: Text(hasMore?"下拉加载更多":'没有更多回复了', style: TextStyle(color: Colors.grey)),
+    ),
+  );
   }
 
-  
+  void onScroll() async{
+    if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError&&totalPages<4) {
+        currentPage++;
+        await loadMore();
+    }
+  }
+  @override
+  void dispose() {
+  controller.dispose();
+  super.dispose();
+}
 }
 
-// 在列表页添加跳转逻辑
+

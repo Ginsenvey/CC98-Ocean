@@ -1,5 +1,6 @@
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/smart_image.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/link_definition.dart';
 import 'package:cc98_ocean/pages/board.dart';
@@ -48,10 +49,21 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
+    getUserData();
+  }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 根据当前 Theme 重新生成 stylesheet，保证随主题实时更新
     initializeStyleSheet();
-    fetchUserData();
   }
   void initializeStyleSheet(){
+    final baseTextStyle = (Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle()).copyWith(
+      wordSpacing: 1.2,
+      fontSize: 14,
+      height: 1.2,
+    );
     extendedStyle=BBStylesheet(tags: [
     HeightLimitedImgTag(maxHeight: 100),
     CenterAlignTag(),
@@ -65,13 +77,7 @@ class _ProfileState extends State<Profile> {
     ColorTag(),
     TopicTag(onTap: (url)=>LinkClick(context,url))
     ],
-    defaultText: TextStyle(
-    wordSpacing: 1.2,
-    fontSize: 14,
-    color: Colors.black,
-    height: 1.2,
-    )
-    );
+    defaultText: baseTextStyle);
   }
   static void LinkClick(BuildContext context, String url){
     var r=LinkAnalyzer.definite(url);
@@ -122,7 +128,7 @@ class _ProfileState extends State<Profile> {
     );
 }
   // 获取用户数据
-  Future<void> fetchUserData() async {
+  Future<void> getUserData() async {
     setState(() {
       isLoading = true;
       hasError = false;
@@ -203,8 +209,7 @@ class _ProfileState extends State<Profile> {
           },),
         ],
         centerTitle: true,
-        title: const Text("空间",style: TextStyle(fontSize: 16,color: ColorTokens.primaryLight,fontWeight: FontWeight.bold),)
-
+        title: StatusTitle(title: "空间",isLoading: isLoading,onTap:getUserData)
       ),
       body: buildLayout(),
       
@@ -212,8 +217,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget buildLayout() {
-    if(isLoading)return Center(child: CircularProgressIndicator());
-    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchUserData);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getUserData);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -261,7 +265,7 @@ class _ProfileState extends State<Profile> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color:ColorTokens.primaryLight,
+                            color:Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 12),

@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
+import 'package:cc98_ocean/controls/adaptive_divider.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/smart_image.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/core/kernel.dart';
@@ -77,13 +79,12 @@ class _DiscoverState extends State<Discover> {
   void initState() {
     super.initState();
     controller.addListener(onScroll);
-    fetchPosts();
+    getPosts();
   }
 
   // 模拟从API获取帖子数据
-  Future<void> fetchPosts() async {
+  Future<void> getPosts() async {
     setState(() {
-      //posts.clear();
       isLoading = true;
       hasError = false;
     });
@@ -134,12 +135,12 @@ class _DiscoverState extends State<Discover> {
     setState(() {
       posts.clear(); // 清空当前列表
     });
-    await fetchPosts();
+    await getPosts();
   }
   Future<void> _loadNextPage() async {
     if (isLoading) return;
       currentPage++;
-      await fetchPosts();
+      await getPosts();
   }
 
   
@@ -154,25 +155,21 @@ class _DiscoverState extends State<Discover> {
         ),       
         actionsPadding: EdgeInsets.only(right: 13),
         centerTitle: true,
-        title: buildStatusTitle()
-
+        title: StatusTitle(title: "发现",isLoading: isLoading,onTap: ()async{
+          setState(() {
+            posts.clear();
+          });
+          currentPage=0;
+          await getPosts();
+        },)
       ),
       body: buildLayout(),
     );
   }
-  Widget buildStatusTitle(){
-    return Row(
-      spacing: 12,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text("发现",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight)),
-        if(isLoading)SizedBox(width: 16,height: 16,child: CircularProgressIndicator(strokeWidth: 3))
-      ],
-    );
-  }
+  
   Widget buildLayout() {
-    if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: fetchPosts);
-    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: fetchPosts);
+    if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getPosts);
+    if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getPosts);
     return Column(
       children: [
         Expanded(
@@ -180,17 +177,7 @@ class _DiscoverState extends State<Discover> {
             controller: controller,
             itemCount: posts.length,
             separatorBuilder: (_, __) {
-              if(!kIsWeb){
-                if(Platform.isWindows||Platform.isLinux||Platform.isMacOS){
-                  return Divider(height: 1,thickness: 1, color: ColorTokens.dividerBlue);
-                }
-                else{
-                  return Divider(height: 1,thickness: 6, color: ColorTokens.dividerBlue);
-                }
-              }
-              else{
-                return Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue);
-              }
+              return AdaptiveDivider();
             },
             itemBuilder: (context, index) {
               return buildPostItem(posts[index]);
@@ -202,6 +189,7 @@ class _DiscoverState extends State<Discover> {
 
     
   }
+  
   // 构建帖子列表项
   Widget buildPostItem(Post post) {
   final mediaMap=post.mediaContent;//取出第一层
@@ -209,7 +197,6 @@ class _DiscoverState extends State<Discover> {
   return Card( 
     elevation: 0,
     shape: RoundedRectangleBorder(
-      
       borderRadius: BorderRadius.circular(0),
     ),
     child: ClickArea(
@@ -285,7 +272,10 @@ class _DiscoverState extends State<Discover> {
                               width: 150,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Text("图片加载失败:$url"),
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text("图片加载失败:$url"),
+                                  ),
                             ),
                       ),
                     ))
@@ -328,10 +318,10 @@ class _DiscoverState extends State<Discover> {
   }
 
 
-  void onScroll() {
+  void onScroll()async{
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError) {
         currentPage++;
-        fetchPosts();  
+        await getPosts();  
     }
   }
   @override

@@ -4,9 +4,9 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 
 class PageBar extends StatelessWidget {
-  final int currentPage;      // 1-based
-  final int totalPages;       // 1-based
-  final ValueChanged<int> onJump; // 外部只需 setState(newPage)
+  final int currentPage;      
+  final int totalPages;      
+  final ValueChanged<int> onJump; 
 
   const PageBar({
     super.key,

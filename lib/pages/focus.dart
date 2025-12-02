@@ -1,10 +1,12 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:cc98_ocean/controls/clickarea.dart';
+import 'package:cc98_ocean/controls/adaptive_divider.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
+import 'package:cc98_ocean/controls/smart_image.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/discover.dart';
@@ -12,7 +14,6 @@ import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/pages/profile.dart';
 import 'package:cc98_ocean/pages/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class SimpleUserInfo{
@@ -63,6 +64,7 @@ class _MomentsState extends State<Moments>{
   @override
   void initState() {
     super.initState();
+    controller.addListener(onScroll);
     getMoments();
   }
 
@@ -131,18 +133,16 @@ class _MomentsState extends State<Moments>{
             icon: FluentIcons.edit_16_regular,
             iconColor: ColorTokens.softPurple,
             onPressed: () {
- 
             },
             ),
         ],
-        title: Text("动态",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.softPurple),)
+        title: StatusTitle(title: "动态",isLoading: isLoading)
       ),
       body:buildLayout(),
     );
   }
-
+  
   Widget buildLayout(){
-    if(isLoading)return Center(child: CircularProgressIndicator());
     if(!isLoading&&posts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getMoments);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getMoments);
     return CustomScrollView(
@@ -170,30 +170,18 @@ class _MomentsState extends State<Moments>{
       SliverToBoxAdapter(
         child: buildUserList(users),
       ),
-      SliverToBoxAdapter(child: buildDivider()),
+      SliverToBoxAdapter(child:AdaptiveDivider()),
       //SliverList
       SliverList.separated(
         itemCount:posts.length ,
         itemBuilder: (context, index) => buildPostItem(posts[index]),
-        separatorBuilder:(_, __) =>buildDivider()
+        separatorBuilder:(_, __) =>AdaptiveDivider()
         ),
     ],
   );
   }
 
-  Widget buildDivider(){
-    if(!kIsWeb){
-                if(Platform.isWindows||Platform.isLinux||Platform.isMacOS){
-                  return Divider(height: 1,thickness: 1, color: ColorTokens.dividerBlue);
-                }
-                else{
-                  return Divider(height: 1,thickness: 6, color: ColorTokens.dividerBlue);
-                }
-              }
-              else{
-                return Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue);
-              }
-  }
+  
 
   Widget buildUserList(List<SimpleUserInfo> users){
     return SizedBox(
@@ -303,17 +291,20 @@ class _MomentsState extends State<Moments>{
                 runSpacing: 8,
                 spacing: 12,
                 children: thumbNails
-                    .map((e) => Card(
+                    .map((url) => Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(side: BorderSide(color: ColorTokens.softPurple),borderRadius:BorderRadiusGeometry.circular(6)),
                       child: ClipRRect(
                         borderRadius: BorderRadiusGeometry.circular(6),
-                        child: Image.network(
-                              e,
+                        child: Image(
+                              image:SmartNetworkImage(url),
                               width: 150,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Text("图片加载失败:$e"),
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text("图片加载失败:$url"),
+                                  ),
                             ),
                       ),
                     ))
@@ -345,15 +336,15 @@ Widget buildStatItem(IconData icon,int count){
       Text(count.toString(),style: TextStyle(color: ColorTokens.softPurple))
     ]);
   }
-void onScroll() {
+void onScroll()async {
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
         currentPage++;
-        getMoments();
-  }
+        await getMoments();
+    }
   }
   @override
   void dispose() {
   controller.dispose();
   super.dispose();
-}
+  }
 }

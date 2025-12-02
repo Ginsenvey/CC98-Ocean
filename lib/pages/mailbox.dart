@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/chat.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
@@ -97,14 +98,13 @@ class _MailboxState extends State<Mailbox> {
           ),
         ),
         
-        title: const Text("消息",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: ColorTokens.primaryLight),)
+        title: StatusTitle(title: "消息",isLoading: isLoading,onTap:getRecentContact)
 
       ),
       body:buildLayout() 
     );
   }
   Widget buildLayout(){
-    if(isLoading)return Center(child: CircularProgressIndicator());
     if(!isLoading&&contacts.isEmpty)return ErrorIndicator(icon: FluentIcons.music_note_1_20_regular, info: "暂无帖子，点击刷新",onTapped: getRecentContact);
     if(hasError)return ErrorIndicator(icon: FluentIcons.music_note_2_16_regular, info: errorMessage,onTapped: getRecentContact);
     return Column(
@@ -119,7 +119,7 @@ class _MailboxState extends State<Mailbox> {
     );
   }
   Widget buildMailList(){
-    return ListView.separated(itemBuilder: (_,i)=>buildMailCard(contacts[i]), separatorBuilder: (_,i)=>Divider(thickness: 1,indent: 60,endIndent: 0,color: ColorTokens.dividerBlue,), itemCount:contacts.length);
+    return ListView.separated(itemBuilder: (_,i)=>buildMailCard(contacts[i]), separatorBuilder: (_,i)=>Divider(indent: 60,height: 1,thickness: 1,color: Theme.of(context).dividerColor), itemCount:contacts.length);
   }
   Widget buildMailCard(Contact contact){
     return ClickArea(
@@ -143,7 +143,6 @@ class _MailboxState extends State<Mailbox> {
                     children: [
                       Text(contact.name,style: const TextStyle(
                                   fontSize: 14,
-                                  color: Colors.black, 
                                 ),),
                       Text(DateFormat('yyyy-MM-dd').format(
                         DateTime.parse(contact.time).add(const Duration(hours: 8)),),

@@ -4,6 +4,7 @@ import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/profile.dart';
@@ -146,7 +147,13 @@ class _FriendsState extends State<Friends>{
             ),
         ],
         
-        title: Text("好友",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),), 
+        title: StatusTitle(title: "好友",isLoading: isLoading,onTap: () {
+          setState(() {
+            friends.clear();
+          });
+          currentPage=0;
+          getFriends();
+        },) 
       ),
       body: buildLayout(),
       );
@@ -236,17 +243,17 @@ class _FriendsState extends State<Friends>{
     );
   }
   Widget buildLoadMoreIndicator(){
-    return isLoading? Center(child:CircularProgressIndicator()):const Padding(
+    return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(
           child: Text('下拉加载更多', style: TextStyle(color: Colors.grey)),
         ),
       );
   }
-  void onScroll() {
+  void onScroll()async{
     if (controller.position.pixels >=controller.position.maxScrollExtent - 100 &&!isLoading &&!hasError && hasMore) {
         currentPage++;
-        getFriends();  
+        await getFriends();  
     }
   }
 

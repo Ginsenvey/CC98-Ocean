@@ -75,14 +75,16 @@ class Connector {
       final header=<String,String>{
         "Cookie":vpnHeader
       };
+      dev.log("使用以下凭据$vpnHeader",name: "网络检测");
       final response = await http.get(Uri.parse(targetUri),headers: header);
       if (response.statusCode == 200) {
         final resText = response.body.trim();
         dev.log("检测vpn网络,url为$targetUri",name:"网络检测");
-        dev.log(resText[0],name: "网络检测结果");
+        dev.log(resText,name: "网络检测结果");
         if (resText == "0") {
           return "0";
         } else if (resText == "1" || resText == "2") {
+          
           return "1";
         } else if(resText.contains("WebVPN")){
           return "0";//cookie过期的情况
@@ -142,10 +144,10 @@ class Connector {
           saveToken("access", newAccessToken);
           return true;
         } else {
-          throw Exception('Failed to refresh token: missing tokens in response');
+          throw Exception('获取访问令牌失败:未返回令牌');
         }
       } else {
-        throw Exception('Token refresh failed: ${response.statusCode}');
+        throw Exception('令牌刷新失败: ${response.statusCode}');
       }
     } catch (e) {
       await clearToken();
@@ -173,7 +175,7 @@ class Connector {
     String url=isVpnEnabled?VpnService.convertUrl(originUrl):originUrl;
     // 如果设置了内容类型，则使用此类型
     final contentType = headers?['Content-Type'] ?? '';
-    dev.log(url);
+    dev.log(originUrl,name:"访问请求");
     // 处理请求体
     Object? finalBody;
     //如果未设置类型，判断内容是否为映射表，并进行转换
@@ -289,7 +291,7 @@ class AuthService
   Future<int> initializeNetwork()async{
     //检查网络
     String status=await Connector().checkNetwork(false);
-    dev.log("使用以下凭据${Connector().vpnHeader}",name: "网络检测");
+    
     if(status=="1"){
       dev.log("处于内网中",name:"网络检测");
       return 0;
@@ -300,12 +302,11 @@ class AuthService
       if(await Connector().isVpnUsable()){
         dev.log("存在相关凭据,vpn可用");
         //注入
-        Connector().injectToken();
-        dev.log("已注入凭据，重试${Connector().vpnHeader}");
+        await Connector().injectToken();
         String newStatus=await Connector().checkNetwork(true);
         if(newStatus=="1"){
           Connector().isVpnEnabled=true;
-          dev.log("启用vpn",name: "网络检测");
+          dev.log("令牌有效,启用vpn",name: "网络检测");
           return 1;
         }
         else if(newStatus=="0"){

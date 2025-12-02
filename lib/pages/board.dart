@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:cc98_ocean/controls/info_indicator.dart';
+import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/pages/boards.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
@@ -168,7 +169,7 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
             },
             ),
         ],
-        title: Text(isLoading?"加载中···":data.name,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+        title: StatusTitle(title:isLoading?"加载中···":data.name,isLoading: isLoading,onTap:getMetaData)
         //对于late变量，我们确保已经初始化再调用
       ),
       body:buildLayout(),

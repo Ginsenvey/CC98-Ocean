@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
+import 'package:cc98_ocean/core/themes/theme_controller.dart';
+import 'package:cc98_ocean/main.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -18,27 +22,15 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
-  // 状态变量
-  int themeMode = 0;
-  Color _themeColor = Colors.blue;
   bool _compactMode = false;
   bool _useFooters = true;
   List<String> themeList = ['跟随系统', '浅色模式', '深色模式'];
-  late SharedPreferences set;
+  
   @override
-  void initState()async{
+  void initState() {
     super.initState();
-    set=await SharedPreferences.getInstance();
   }
-  void loadSettings(){
-    int? theme=set.getInt("theme");
-    if(theme!=null){
-      themeMode=theme;
-    }
-    else{
-      set.setInt("theme", 0);
-    }
-  }
+
   // 退出登录确认
   void _confirmLogout() {
     showDialog(
@@ -71,59 +63,48 @@ class _SettingsState extends State<Settings> {
   // 主题颜色选择器
   void _showColorPicker() {
     final colors = [
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.deepPurple,
-      Colors.indigo,
-      Colors.blue,
-      Colors.lightBlue,
-      Colors.cyan,
-      Colors.teal,
-      Colors.green,
-      Colors.lightGreen,
-      Colors.lime,
-      Colors.yellow,
-      Colors.amber,
-      Colors.orange,
-      Colors.deepOrange,
-      Colors.brown,
-      Colors.grey,
-      Colors.blueGrey,
+      ColorTokens.softPurple, Colors.red, ColorTokens.softPink,  ColorTokens.primaryLight, ColorTokens.primaryDark,
+      Colors.blue, Colors.lightBlue, Colors.cyan, Colors.teal, Colors.green,
+      Colors.lightGreen, Colors.lime, Colors.yellow, Colors.amber, Colors.orange,
+      Colors.deepOrange, Colors.brown, Colors.grey, Colors.blueGrey,
     ];
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择主题色'),
-        content: SizedBox(
-          width: double.minPositive,
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: colors.length,
-            itemBuilder: (context, index) => GestureDetector(
-              onTap: () {
-                setState(() => _themeColor = colors[index]);
-                Navigator.pop(context);
-              },
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: colors[index],
-                  borderRadius: BorderRadius.circular(8),
-                  shape: BoxShape.rectangle,
+      builder: (context) {
+        final appState = Provider.of<AppState>(context, listen: false);
+        return AlertDialog(
+          title: const Text('选择主题色'),
+          content: SizedBox(
+            width: double.minPositive,
+            child: GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: colors.length,
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: () {
+                  appState.setPrimaryColor(colors[index]); // 实时生效并持久化
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: colors[index],
+                    borderRadius: BorderRadius.circular(4),
+                    shape: BoxShape.rectangle,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+        );
+      },
     );
   }
   String get platform => switch (defaultTargetPlatform) {
@@ -146,7 +127,8 @@ class _SettingsState extends State<Settings> {
 
   @override
   Widget build(BuildContext context) {
-    final itemList= themeList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList();
+    final appState = Provider.of<AppState>(context);
+    final itemList = themeList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList();
     
     return Scaffold(
       appBar: AppBar(
@@ -188,7 +170,8 @@ class _SettingsState extends State<Settings> {
             ),
               trailing: DropdownButtonHideUnderline(
   child: DropdownButton2<String>(
-    value: themeList[themeMode],
+    iconStyleData: IconStyleData(icon:Icon(FluentIcons.chevron_down_12_regular,size: 20)),
+    value: themeList[appState.themeMode],
     dropdownStyleData: DropdownStyleData(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
@@ -201,16 +184,20 @@ class _SettingsState extends State<Settings> {
       padding: EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ColorTokens.softPurple, width: 1),
+        border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
       ),
     ),
     items:itemList,
-    onChanged: (v) => setState(() => themeMode = themeList.indexOf(v??"跟随系统")),
+    onChanged: (v) {
+      final idx = themeList.indexOf(v ?? '跟随系统');
+      appState.setThemeMode(idx); // 实时生效并持久化
+    },
   ),
 )
             ),
             ListTile(
               title: const Text('主题颜色'),
+              subtitle: const Text("实验性功能。仅部分区域生效"),
               leading: const Icon(FluentIcons.paint_brush_16_regular),
               shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
@@ -219,10 +206,9 @@ class _SettingsState extends State<Settings> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: _themeColor,
-                  borderRadius: BorderRadius.circular(5),
+                  color: appState.primaryColor,
+                  borderRadius: BorderRadius.circular(4),
                   shape: BoxShape.rectangle,
-                  border: Border.all(color: Colors.grey),
                 ),
               ),
               onTap: _showColorPicker,

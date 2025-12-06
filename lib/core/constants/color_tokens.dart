@@ -15,4 +15,5 @@ abstract class ColorTokens {
   static const Color chatBackground=Color(0xFFE2EAF4);
   static const Color dartGrey=Color(0xff404040);
   static const Color dividerGrey=Color(0xff303030);
+  static const Color quoteBorder=Color(0xffffc4ae);
 }

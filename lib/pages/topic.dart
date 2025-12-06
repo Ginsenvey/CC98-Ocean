@@ -1,8 +1,8 @@
 import 'package:cc98_ocean/controls/clickarea.dart';
-import 'package:cc98_ocean/controls/adaptive_divider.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
+import 'package:cc98_ocean/controls/image_viewer.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/pager.dart';
@@ -10,15 +10,18 @@ import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
+import 'package:cc98_ocean/core/themes/theme_controller.dart';
 import 'package:cc98_ocean/pages/focus.dart';
 import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/pages/profile.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:flutter_bbcode/flutter_bbcode.dart';
 import 'package:markdown_widget/widget/all.dart';
+import 'package:provider/provider.dart';
 
 class Reply{
   final int id;
@@ -77,6 +80,7 @@ class Topic extends StatefulWidget {
 
 class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
   late BBStylesheet extendStyle;
+  bool useTail=true;
   Map<String, dynamic>? topicDetail;
   List<Reply> replies = [];
   bool isLoading = true;
@@ -116,7 +120,7 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
         .addTag(AudioTag())
         .addTag(VideoTag())
         .addTag(StrikeTag())
-        .replaceTag(SmartImgTag());
+        .replaceTag(SmartImgTag(context: context));
   }
   // 获取帖子详情
   Future<void> getTopicData() async {
@@ -210,6 +214,7 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
   }
   @override
   Widget build(BuildContext context) {
+    useTail=Provider.of<AppState>(context).useTail;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
@@ -446,8 +451,15 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
      ) );
   }
 
-  // 处理回复操作
-  
+  // 小尾巴参数
+  String get platform => switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'Android',
+      TargetPlatform.iOS     => 'IOS',
+      TargetPlatform.windows => 'Windows x64',
+      TargetPlatform.macOS  => 'macOS',
+      TargetPlatform.linux   => 'Linux',
+      TargetPlatform.fuchsia => 'Fuchsia',
+    };
 
   // 处理点赞
   void _handleLike(int replyId,bool mode)async {
@@ -496,12 +508,10 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
         confirmText: "发送",
         onConfirm: ()async {
               String originalContent=controller.text.trim();
-              String content="$originalContent\n[align=right][size=3][color=gray]——来自「[b][color=purple]CC98 For Android[/color][/b]」[/color][/size][/align]";
-              if(content.isEmpty)
+              String content=useTail?originalContent:"$originalContent\n[align=right][size=3][color=gray]——来自「[b][color=purple]CC98 For $platform[/color][/b]」[/color][/size][/align]";
+              if(originalContent.isEmpty)
               {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('回复内容不能为空')),
-                );
+                InfoFlower.showContent(context, child: Text("回复内容不能为空",style: TextStyle(color: ColorTokens.primaryLight)));
                 return;
               }
               else{

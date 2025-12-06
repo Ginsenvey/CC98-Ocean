@@ -2,7 +2,7 @@ import 'dart:developer' as dev;
 
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
-import 'package:cc98_ocean/main.dart';
+import 'package:cc98_ocean/pages/login.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;

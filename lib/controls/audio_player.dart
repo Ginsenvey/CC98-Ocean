@@ -66,7 +66,7 @@ class AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: ColorTokens.dividerBlue,
+      color: Theme.of(context).brightness==Brightness.light? const Color.fromARGB(255, 27, 187, 255):ColorTokens.dartGrey,
       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(8.0),

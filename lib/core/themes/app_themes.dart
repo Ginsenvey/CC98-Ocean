@@ -13,7 +13,7 @@ class AppThemes {
     brightness: Brightness.light,
     dividerColor: ColorTokens.dividerBlue,
     appBarTheme: const AppBarTheme(elevation: 0),
-    fontFamily: 'Arial'
+    fontFamily: "Hm Sans"
   );
 
   static final ThemeData dark = ThemeData(
@@ -23,6 +23,7 @@ class AppThemes {
       surface: ColorTokens.surfaceDark,
     ),
     brightness: Brightness.dark,
-    dividerColor: ColorTokens.dividerGrey
+    dividerColor: ColorTokens.dividerGrey,
+    fontFamily: "Hm Sans"
   );
 }

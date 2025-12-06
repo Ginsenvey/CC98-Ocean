@@ -4,13 +4,11 @@ import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/themes/theme_controller.dart';
-import 'package:cc98_ocean/main.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 
@@ -23,7 +21,6 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   bool _compactMode = false;
-  bool _useFooters = true;
   List<String> themeList = ['跟随系统', '浅色模式', '深色模式'];
   
   @override
@@ -234,8 +231,8 @@ class _SettingsState extends State<Settings> {
               shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(6),
             ),
-              value: _useFooters,
-              onChanged: (value) => setState(() => _useFooters = value),
+              value: appState.useTail,
+              onChanged: (value) => appState.setTailMode(value),
               secondary: const Icon(FluentIcons.phone_desktop_16_regular),
             ),
         

@@ -1,7 +1,10 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:bbob_dart/bbob_dart.dart' as bbob;
 import 'package:cc98_ocean/controls/audio_player.dart';
+import 'package:cc98_ocean/controls/clickarea.dart';
+import 'package:cc98_ocean/controls/image_viewer.dart';
 import 'package:cc98_ocean/controls/smart_image.dart';
 import 'package:cc98_ocean/controls/video_player.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +24,6 @@ class AudioTag extends AdvancedTag {
     String audioUrl = element.children.first.textContent;
 
     final player=AudioPlayerWidget(audioUrl: audioUrl);
-    //final text=Text("点击播放音频",style: TextStyle(color: Colors.blue,decoration: TextDecoration.underline),);
     if (renderer.peekTapAction() != null) {
       return [
         WidgetSpan(
@@ -146,12 +148,13 @@ class TopicTag extends StyleTag {
   TextStyle transformStyle(
       TextStyle oldStyle, Map<String, String>? attributes) {
     return oldStyle.copyWith(
-        decoration: TextDecoration.underline, color: Colors.blue);
+        decoration: TextDecoration.underline, color: Color.fromARGB(255, 125, 108, 172));
   }
 }
 
 class SmartImgTag extends AdvancedTag {
-  SmartImgTag() : super("img");
+  final BuildContext context;
+  SmartImgTag({required this.context}) : super("img");
 
   @override
   List<InlineSpan> parse(FlutterRenderer renderer, bbob.Element element) {
@@ -162,24 +165,14 @@ class SmartImgTag extends AdvancedTag {
     // Image URL is the first child / node. If not, that's an issue for the person writing
     // the BBCode.
     String path = element.children.first.textContent;
-
+    bool isDesktop=Platform.isWindows||Platform.isLinux||Platform.isMacOS;
     final image = path.contains("assets/images")?Image.asset(path,height: 24,fit: BoxFit.contain,
         errorBuilder: (context, error, stack) => Image.asset(path.replaceAll("png", "gif"),height: 24,fit: BoxFit.contain,
-        errorBuilder: (context, error, stack) => Text("[$tag]"))):Image(image: SmartNetworkImage(path),errorBuilder: (context, error, stack) => Text("[$tag]"));
-
-    if (renderer.peekTapAction() != null) {
-      return [
-        WidgetSpan(
-            child: GestureDetector(
-          onTap: renderer.peekTapAction(),
-          child: image,
-        ))
-      ];
-    }
-
+        errorBuilder: (context, error, stack) => Text("[$tag]"))):Image(image: SmartNetworkImage(path),width:isDesktop?MediaQuery.of(context).size.width/3:double.infinity,errorBuilder: (context, error, stack) => Text("[$tag]"));
+    final imageWithPreviewer=ClickArea(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>ImagePreview(imageUrl: path))),child: image);
     return [
       WidgetSpan(
-        child: image,
+        child: imageWithPreviewer,
       )
     ];
   }

@@ -36,7 +36,6 @@ class _ProfileState extends State<Profile> {
   //签名档特供样式
   late BBStylesheet extendedStyle;
   Map<String, dynamic>? userProfile;
-  // 历史发帖列表
   List<StandardPost> recentTopics = [];
   bool isLoading = true;
   bool hasError = false;
@@ -54,7 +53,6 @@ class _ProfileState extends State<Profile> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 根据当前 Theme 重新生成 stylesheet，保证随主题实时更新
     initializeStyleSheet();
   }
   void initializeStyleSheet(){
@@ -75,58 +73,12 @@ class _ProfileState extends State<Profile> {
     ItalicTag(),
     UrlTag(),
     ColorTag(),
-    TopicTag(onTap: (url)=>LinkClick(context,url))
+    TopicTag(onTap: (url)=>LinkAnalyzer.LinkClick(context,url))
     ],
     defaultText: baseTextStyle);
   }
-  static void LinkClick(BuildContext context, String url){
-    var r=LinkAnalyzer.definite(url);
-    switch(r.$1){
-      case ElementType.topic:
-        Navigator.push(context, MaterialPageRoute(builder: (context)=>Topic(topicId: r.$2.safeToInt)));
-        break;
-      case ElementType.anchor:
-        
-        throw UnimplementedError();
-      case ElementType.user:
-        
-        throw UnimplementedError();
-      case ElementType.board:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case ElementType.outlink:
-        
-        throw UnimplementedError();
-      case ElementType.image:
-        
-        throw UnimplementedError();
-      case ElementType.audio:
-        
-        throw UnimplementedError();
-      case ElementType.post:
-        
-        throw UnimplementedError();
-      case ElementType.file:
-        
-        throw UnimplementedError();
-      case ElementType.video:
-        
-        throw UnimplementedError();
-    }
-  }
-  static Future<void> launch(String url)async{
-  await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication, // 在外部浏览器打开
-      // 可选配置:
-      // mode: LaunchMode.inAppWebView, // 在应用内WebView打开
-      webViewConfiguration: const WebViewConfiguration(
-        enableJavaScript: true, // 启用JavaScript
-        enableDomStorage: true, // 启用DOM存储
-      ),
-      webOnlyWindowName: '_blank', // 网页版在新标签页打开
-    );
-}
+  
+  
   // 获取用户数据
   Future<void> getUserData() async {
     setState(() {

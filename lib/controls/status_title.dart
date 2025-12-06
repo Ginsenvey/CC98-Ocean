@@ -1,5 +1,4 @@
 import 'package:cc98_ocean/controls/clickarea.dart';
-import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:flutter/material.dart';
 
 class StatusTitle extends StatelessWidget {

@@ -184,7 +184,7 @@ class _FriendsState extends State<Friends>{
           ListView.separated(
             controller: controller,
             itemCount: hasMore?friends.length+1: friends.length,
-            separatorBuilder: (context, index) => Divider(height: 1, thickness: 1,color: ColorTokens.dividerBlue),
+            separatorBuilder: (context, index) => Divider(indent: 60,height: 6, thickness: 1,color: Theme.of(context).dividerColor),
             itemBuilder: (_,i){
               if(i==friends.length){
                 return buildLoadMoreIndicator();

@@ -8,7 +8,6 @@ import 'package:cc98_ocean/pages/chat.dart';
 import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/controls/segmented.dart';
-import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -119,7 +118,7 @@ class _MailboxState extends State<Mailbox> {
     );
   }
   Widget buildMailList(){
-    return ListView.separated(itemBuilder: (_,i)=>buildMailCard(contacts[i]), separatorBuilder: (_,i)=>Divider(indent: 60,height: 1,thickness: 1,color: Theme.of(context).dividerColor), itemCount:contacts.length);
+    return ListView.separated(itemBuilder: (_,i)=>buildMailCard(contacts[i]), separatorBuilder: (_,i)=>Divider(indent: 60,height: 6,thickness: 1,color: Theme.of(context).dividerColor), itemCount:contacts.length);
   }
   Widget buildMailCard(Contact contact){
     return ClickArea(

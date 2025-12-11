@@ -10,7 +10,7 @@ import 'package:cc98_ocean/controls/portrait_oval.dart';
 import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
-import 'package:cc98_ocean/core/themes/theme_controller.dart';
+import 'package:cc98_ocean/core/themes/setting_controller.dart';
 import 'package:cc98_ocean/pages/focus.dart';
 import 'package:cc98_ocean/core/helper.dart';
 import 'package:cc98_ocean/pages/profile.dart';

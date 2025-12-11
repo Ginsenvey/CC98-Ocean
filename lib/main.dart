@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
 import 'package:cc98_ocean/core/kernel.dart';
 import 'package:cc98_ocean/core/themes/app_themes.dart';
-import 'package:cc98_ocean/core/themes/theme_controller.dart';
+import 'package:cc98_ocean/core/themes/setting_controller.dart';
 import 'package:cc98_ocean/pages/home.dart';
 import 'package:cc98_ocean/pages/login.dart';
 import 'package:cc98_ocean/pages/vpn_setup.dart';

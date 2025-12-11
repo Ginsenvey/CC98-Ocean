@@ -18,8 +18,62 @@ import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bbcode/flutter_bbcode.dart';
 import 'dart:convert';
+class User{
+  final int id;
+  final String name;
+  final String portraitUrl;
+  final int postCount;
+  final int fanCount;
+  final int followCount;
+  final int gender;
+  final int popularity;
+  final int wealth;
+  final String introduction;
+  final String signatureCode;
+  final String levelTitle;
+  final bool isFollowing;
+  User({
+    required this.id,
+    required this.name,
+    required this.portraitUrl,
+    required this.fanCount,
+    required this.postCount,
+    required this.gender,
+    required this.introduction,
+    required this.followCount,
+    required this.popularity,
+    required this.wealth,
+    required this.isFollowing,
+    required this.levelTitle,
+    required this.signatureCode
+  });
 
-import 'package:url_launcher/url_launcher.dart';
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User && runtimeType == other.runtimeType && id == other.id&&name==other.name;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id:json["id"] as int,
+      name: json["name"] as String? ??"未知用户",
+      portraitUrl: json["portraitUrl"]as String? ??"",
+      followCount: json["followCount"] as int? ?? 0,
+      fanCount: json["fanCount"] as int? ??0,
+      postCount: json["postCount"] as int? ??0,
+      gender: json["gender"] as int? ?? 1,
+      popularity: json["popularity"] as int? ?? 0,
+      wealth: json["wealth"] as int? ?? 0,
+      introduction: json["introduction"] as String? ??"Ta还没有设置简介~",
+      isFollowing: json["isFollowing"] as bool? ?? false,
+      signatureCode: json["signatureCode"] as String? ??"",
+      levelTitle: json["levelTitle"] as String? ??"98er"
+    );
+  }
+}
 
 class Profile extends StatefulWidget {
   final int userId;
@@ -35,7 +89,7 @@ class _ProfileState extends State<Profile> {
 
   //签名档特供样式
   late BBStylesheet extendedStyle;
-  Map<String, dynamic>? userProfile;
+  late User userProfile;
   List<StandardPost> recentTopics = [];
   bool isLoading = true;
   bool hasError = false;
@@ -87,13 +141,12 @@ class _ProfileState extends State<Profile> {
     });
     try {
       String targetUrl =widget.userId==0?'https://api.cc98.org/me':'https://api.cc98.org/user/${widget.userId}';
-      final profileResponse =await Connector().get(targetUrl);
-
-      if (profileResponse.statusCode == 200) {
-        userProfile = json.decode(profileResponse.body);
+      final res =await Connector().get(targetUrl);
+      if (res.statusCode == 200) {
+        userProfile = User.fromJson(json.decode(res.body) as Map<String,dynamic>);
       } else {
         setState(() {
-          errorMessage='获取用户信息失败: ${profileResponse.statusCode}';
+          errorMessage='获取用户信息失败: ${res.statusCode}';
           hasError=true;
         });
       }
@@ -184,7 +237,6 @@ class _ProfileState extends State<Profile> {
   }
   
   Widget buildProfile() {
-    if (userProfile == null) return Container();
     var colorBase=ColorScheme.fromSeed(seedColor: ColorTokens.surfaceLight);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -198,7 +250,7 @@ class _ProfileState extends State<Profile> {
               CircleAvatar(
                 radius: 40,
                 backgroundImage: SmartNetworkImage(
-                  userProfile!['portraitUrl'] ?? '',
+                  userProfile.portraitUrl,
                 ),
                 backgroundColor: colorBase.surface,
               ),
@@ -213,7 +265,7 @@ class _ProfileState extends State<Profile> {
                       spacing: 12,
                       children: [
                         Text(
-                          userProfile!['name'] ?? '未知用户',
+                          userProfile.name,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -222,19 +274,19 @@ class _ProfileState extends State<Profile> {
                         ),
                         const SizedBox(width: 12),
                         Icon(
-                          userProfile!['gender'] == 1 ? Icons.male : Icons.female,
-                          color: userProfile!['gender'] == 1 ? Colors.blue.shade100 : Colors.pink.shade100,
+                          userProfile.gender == 1 ? Icons.male : Icons.female,
+                          color: userProfile.gender == 1 ? Colors.blue.shade100 : Colors.pink.shade100,
                           size: 20,
                         ),
                       ],
                     ),
-                    Text(userProfile!['levelTitle']??"98er",
+                    Text(userProfile.levelTitle,
                          style: TextStyle(
                           fontSize: 13,
                           color: ColorTokens.softPurple)
                         ),
                     // 用户ID
-                    Text('ID: ${userProfile!['id']}',
+                    Text('ID: ${userProfile.id}',
                          style: TextStyle(
                           fontSize: 13,
                           color: ColorTokens.softPurple)
@@ -258,16 +310,15 @@ class _ProfileState extends State<Profile> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              buildStatItem('风评', userProfile!['popularity']?.toString() ?? '0'),
+              buildStatItem('风评', userProfile.popularity.toString()),
               SizedBox(height: 24,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              buildStatItem('动态', userProfile!['postCount']?.toString() ?? '0'),
+              buildStatItem('动态', userProfile.postCount.toString()),
               SizedBox(height: 24,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              ClickArea(child: buildStatItem('粉丝', userProfile!['fanCount']?.toString() ?? '0'),onTap: () {
+              ClickArea(child: buildStatItem('粉丝', userProfile.fanCount.toString()),onTap: () {
                 if(widget.canEscape)return;//可以退出说明这不是用户自己的主页，不允许查看好友
                 Navigator.push(context,MaterialPageRoute(builder: (context) => Friends()));}),
               SizedBox(height: 24,child: VerticalDivider(width: 16,thickness: 1,color: ColorTokens.dividerBlue,)),
-              buildStatItem('财富', userProfile!['wealth']?.toString() ?? '0'),
-
+              buildStatItem('财富', userProfile.wealth.toString()),
             ],
           ),
         ],
@@ -298,8 +349,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget buildSignature() {
-    if (userProfile == null) return Container();
-    final signature = userProfile!['signatureCode'] ?? '';
+    final signature = userProfile.signatureCode;
     return Card(
       elevation: 0,
       color: Theme.of(context).brightness==Brightness.light? ColorTokens.dividerBlue:ColorTokens.dartGrey,

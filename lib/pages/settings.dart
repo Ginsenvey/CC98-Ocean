@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
 import 'package:cc98_ocean/core/constants/color_tokens.dart';
-import 'package:cc98_ocean/core/themes/theme_controller.dart';
+import 'package:cc98_ocean/core/themes/setting_controller.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/foundation.dart';

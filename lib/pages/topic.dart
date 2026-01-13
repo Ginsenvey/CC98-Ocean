@@ -2,7 +2,6 @@ import 'package:cc98_ocean/controls/clickarea.dart';
 import 'package:cc98_ocean/controls/extended_tags.dart';
 import 'package:cc98_ocean/controls/fluent_dialog.dart';
 import 'package:cc98_ocean/controls/fluent_iconbutton.dart';
-import 'package:cc98_ocean/controls/image_viewer.dart';
 import 'package:cc98_ocean/controls/info_flower.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/pager.dart';
@@ -455,7 +454,7 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
   String get platform => switch (defaultTargetPlatform) {
       TargetPlatform.android => 'Android',
       TargetPlatform.iOS     => 'IOS',
-      TargetPlatform.windows => 'Windows x64',
+      TargetPlatform.windows => 'Windows',
       TargetPlatform.macOS  => 'macOS',
       TargetPlatform.linux   => 'Linux',
       TargetPlatform.fuchsia => 'Fuchsia',
@@ -508,7 +507,7 @@ class _TopicState extends State<Topic> with SingleTickerProviderStateMixin {
         confirmText: "发送",
         onConfirm: ()async {
               String originalContent=controller.text.trim();
-              String content=useTail?originalContent:"$originalContent\n[align=right][size=3][color=gray]——来自「[b][color=purple]CC98 For $platform[/color][/b]」[/color][/size][/align]";
+              String content=useTail?"$originalContent\n[align=right][size=3][color=gray]——来自「[b][color=purple]CC98 For $platform[/color][/b]」[/color][/size][/align]":originalContent;
               if(originalContent.isEmpty)
               {
                 InfoFlower.showContent(context, child: Text("回复内容不能为空",style: TextStyle(color: ColorTokens.primaryLight)));

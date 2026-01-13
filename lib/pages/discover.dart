@@ -66,7 +66,7 @@ class Discover extends StatefulWidget {
 }
 
 class _DiscoverState extends State<Discover> {
-  List<dynamic> posts = [];
+  List<Post> posts = [];
   bool isLoading = true;
   bool hasError = false;
   int currentPage = 0;
@@ -91,7 +91,9 @@ class _DiscoverState extends State<Discover> {
       String response=await RequestSender.getNewTopic(currentPage, pageSize);
       if(!response.startsWith("404:")){
         List list = json.decode(response) as List;
-        final data=list.map((e)=>Post.fromJson(e as Map<String,dynamic>)).toList();
+        final existingIds = posts.map((e) => e.id).toSet();
+        //去重处理
+        final data=list.map((e)=>Post.fromJson(e as Map<String,dynamic>)).where((p)=>!existingIds.contains(p.id)).toList();
         final List<int> userIds = data.map((e) => e.userId).toSet().toList();
         final portraitMap=Deserializer.parseUserPortrait(await RequestSender().getUserPortrait(userIds));
         for (var e in data) {

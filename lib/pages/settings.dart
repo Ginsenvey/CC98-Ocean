@@ -60,7 +60,7 @@ class _SettingsState extends State<Settings> {
   // 主题颜色选择器
   void _showColorPicker() {
     final colors = [
-      ColorTokens.softPurple, Colors.red, ColorTokens.softPink,  ColorTokens.primaryLight, ColorTokens.primaryDark,
+      ColorTokens.softPurple, ColorTokens.softPink,  ColorTokens.primaryLight, ColorTokens.primaryDark,
       Colors.blue, Colors.lightBlue, Colors.cyan, Colors.teal, Colors.green,
       Colors.lightGreen, Colors.lime, Colors.yellow, Colors.amber, Colors.orange,
       Colors.deepOrange, Colors.brown, Colors.grey, Colors.blueGrey,

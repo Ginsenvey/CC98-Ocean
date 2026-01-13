@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 
+import 'package:cc98_ocean/controls/adaptive_scrollviewer.dart';
 import 'package:cc98_ocean/controls/info_indicator.dart';
 import 'package:cc98_ocean/controls/status_title.dart';
 import 'package:cc98_ocean/core/kernel.dart';
@@ -14,7 +15,6 @@ import 'package:cc98_ocean/pages/topic.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bbcode/flutter_bbcode.dart';
-import 'package:http/http.dart';
 
 class StandardPost {
   final int id;
@@ -91,17 +91,19 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
     String res=await RequestSender.simpleRequest(url);
     getTopic();
     if(!res.startsWith("404:")){
-      final _data=json.decode(res) as Map<String,dynamic>;
       setState(() {
-        data=BoardInfo.fromJson(_data);
+        data=BoardInfo.fromJson(json.decode(res) as Map<String,dynamic>);
       });
     }
   }catch(e){
     setState(() {
-        isLoading = false;
         hasError = true;
         errorMessage = '加载失败: ${e.toString()}';
       });
+  }finally{
+     setState(() {
+       isLoading = false;
+     });
   }
   }
   
@@ -223,14 +225,19 @@ class _BoardState extends State<Board> with TickerProviderStateMixin
   
   Widget buildBigPaper(){
     final bigPaper=isLoading?"":data.bigPaper;
-    return Card(
-      elevation: 0,
-      color: ColorTokens.dividerBlue,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-        child: BBCodeText(data:BBCodeConverter.convertBBCode(bigPaper),stylesheet: defaultBBStylesheet(textStyle: TextStyle(fontSize: 12,color: Colors.black)),),
-      ));
+    double maxHeight=MediaQuery.of(context).size.height*0.4;
+
+    return AdaptiveScrollView(
+      maxHeight: maxHeight,
+      child: Card(
+        elevation: 0,
+        color: ColorTokens.dividerBlue,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+          child: BBCodeText(data:BBCodeConverter.convertBBCode(bigPaper),stylesheet: defaultBBStylesheet(textStyle: TextStyle(fontSize: 12,color: Colors.black)),),
+        )),
+    );
   }
   Widget buildTopicList(List<StandardPost> posts){
     if (hasError) {

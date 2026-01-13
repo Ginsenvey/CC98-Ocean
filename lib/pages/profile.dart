@@ -89,7 +89,7 @@ class _ProfileState extends State<Profile> {
 
   //签名档特供样式
   late BBStylesheet extendedStyle;
-  late User userProfile;
+  User userProfile=User(id: 0, name: "98用户", portraitUrl: "", fanCount: 0, postCount: 0, gender: 1, introduction: "", followCount: 0, popularity: 0, wealth: 0, isFollowing: false, levelTitle: "98er", signatureCode: "");
   List<StandardPost> recentTopics = [];
   bool isLoading = true;
   bool hasError = false;

@@ -194,7 +194,7 @@ class _BoardsState extends State<Boards>
     style: TextButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
-                side: BorderSide(color: ColorTokens.dividerBlue)
+                side: BorderSide(color:Theme.of(context).brightness==Brightness.light? ColorTokens.dividerBlue:ColorTokens.dividerGrey)
               ),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),

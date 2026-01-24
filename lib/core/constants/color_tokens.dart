@@ -11,9 +11,9 @@ abstract class ColorTokens {
   static const Color softBlue=Color(0xFFd1e1fb);
   static const Color softPink=Color(0xddfb7299);
   static const Color softGrey=Color(0xff959595);
-  static const Color dividerBlue= Color.fromARGB(255, 232, 244, 249);
+  static const Color dividerBlue= Color(0xFFE8F4F9);
   static const Color chatBackground=Color(0xFFE2EAF4);
-  static const Color dartGrey=Color(0xff404040);
+  static const Color darkGrey=Color(0xff404040);
   static const Color dividerGrey=Color(0xff303030);
   static const Color quoteBorder=Color(0xffffc4ae);
 }

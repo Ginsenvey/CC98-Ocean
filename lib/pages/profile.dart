@@ -206,9 +206,6 @@ class _ProfileState extends State<Profile> {
           ),
         ):null,
         actions: [
-          FluentIconbutton(icon: FluentIcons.mail_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>Mailbox()));
-          },),
           FluentIconbutton(icon: FluentIcons.settings_16_regular,iconColor: ColorTokens.softPurple,onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context)=>Settings()));
           },),
@@ -352,7 +349,7 @@ class _ProfileState extends State<Profile> {
     final signature = userProfile.signatureCode;
     return Card(
       elevation: 0,
-      color: Theme.of(context).brightness==Brightness.light? ColorTokens.dividerBlue:ColorTokens.dartGrey,
+      color: Theme.of(context).brightness==Brightness.light? ColorTokens.dividerBlue:ColorTokens.darkGrey,
       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
       child:Padding(padding: EdgeInsetsGeometry.all(8),
       child: Row(

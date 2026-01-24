@@ -76,12 +76,18 @@ switch (selectedIndex) {
               children: [
                 if(!kIsWeb)if(Platform.isWindows||Platform.isLinux||Platform.isMacOS)
                   buildSideBar(),
-                if(kIsWeb)buildSideBar(),
                 Expanded(child: page),
               ],
             ),
           ),
-          bottomNavigationBar:kIsWeb?null:(Platform.isAndroid||Platform.isIOS)?BottomNavigationBar(
+          bottomNavigationBar:kIsWeb?buildBottomNavigationBar():(Platform.isAndroid||Platform.isIOS)?buildBottomNavigationBar():null,
+          );
+          
+      }
+    );
+  }
+  Widget buildBottomNavigationBar(){
+    return BottomNavigationBar(
             type: BottomNavigationBarType.fixed, 
             onTap: (i) =>setState(() {
               selectedIndex=i;
@@ -93,11 +99,7 @@ switch (selectedIndex) {
           BottomNavigationBarItem(icon: Icon(FluentIcons.leaf_one_16_regular), label: '发现'),
           BottomNavigationBarItem(icon: Icon(FluentIcons.board_16_regular), label: '版面'),
           BottomNavigationBarItem(icon: Icon(FluentIcons.person_16_regular), label: '我的'),]
-      ):null,
-          );
-          
-      }
-    );
+      );
   }
   Widget buildSideBar(){
     return SafeArea(

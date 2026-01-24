@@ -167,7 +167,7 @@ class _BoardsState extends State<Boards>
             ),
           ),
         ),
-        AdaptiveDivider(),
+        Divider(height: 6, thickness: 1,color: Theme.of(context).dividerColor),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12,horizontal: 8),
           child: Wrap(

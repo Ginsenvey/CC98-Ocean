@@ -221,7 +221,7 @@ class _MailboxState extends State<Mailbox> {
         itemCount:dataMap[currentMailType]!.length);
       case MailType.comments:
         return ListView.separated(itemBuilder: (_,i)=>buildNotificationCard((dataMap[currentMailType] as List<NotificationItem>)[i]), 
-        separatorBuilder:(_,i)=> AdaptiveDivider(), 
+        separatorBuilder:(_,i)=> Divider(height: 6, thickness: 1,color: Theme.of(context).dividerColor), 
         itemCount: dataMap[currentMailType]!.length);
       case MailType.systemNotification:
         return ListView.separated(itemBuilder: (_,i)=>buildMailCard((dataMap[currentMailType] as List<Contact>)[i]), 
@@ -305,7 +305,7 @@ class _MailboxState extends State<Mailbox> {
                             ),)
                     ],
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
                   Text("在CC${item.topicId}中回复了你。",style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 12,

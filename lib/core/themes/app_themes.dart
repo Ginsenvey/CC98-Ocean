@@ -9,9 +9,11 @@ class AppThemes {
     colorScheme: ColorScheme.light(
       primary: ColorTokens.primaryLight,
       surface: ColorTokens.surfaceLight,
+      secondaryContainer: ColorTokens.dividerBlue
     ),
     brightness: Brightness.light,
     dividerColor: ColorTokens.dividerBlue,
+    
     appBarTheme: const AppBarTheme(elevation: 0),
     fontFamily: "Hm Sans"
   );
@@ -21,6 +23,7 @@ class AppThemes {
     colorScheme: ColorScheme.dark(
       primary: ColorTokens.primaryDark,
       surface: ColorTokens.surfaceDark,
+      secondaryContainer: ColorTokens.darkGrey
     ),
     brightness: Brightness.dark,
     dividerColor: ColorTokens.dividerGrey,

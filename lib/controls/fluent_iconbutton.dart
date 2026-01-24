@@ -20,7 +20,7 @@ class FluentIconbutton extends StatelessWidget {
             onPressed:()=>{onPressed?.call()}, 
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
-              fixedSize: const Size.square(32),
+              fixedSize: const Size.square(36),
               minimumSize: Size(32,32),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
